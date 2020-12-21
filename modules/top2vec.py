@@ -53,7 +53,8 @@ logger.setLevel(logging.WARNING)
 sh = logging.StreamHandler()
 sh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger.addHandler(sh)
-porter_stemmer = PorterStemmer()
+#porter_stemmer = PorterStemmer()
+
 
 class LemmaTokenizer(object):
         def __init__(self):
@@ -488,7 +489,7 @@ class Top2Vec:
 
         if self.lemmatize:
             vectorizer = CountVectorizer(
-                tokenizer=stemming_tokenizer,
+                tokenizer=LemmaTokenizer(),
                 strip_accents='unicode',
                 lowercase=True,
                 min_df=self.min_df,
