@@ -23,6 +23,8 @@ from nltk.stem import WordNetLemmatizer
 from nltk.stem.porter import PorterStemmer
 from textblob import TextBlob
 
+
+
 try:
     import hnswlib
 
@@ -486,7 +488,7 @@ class Top2Vec:
 
         if self.lemmatize:
             vectorizer = CountVectorizer(
-                tokenizer=textblob_tokenizer,
+                tokenizer=stemming_tokenizer,
                 strip_accents='unicode',
                 lowercase=True,
                 min_df=self.min_df,
