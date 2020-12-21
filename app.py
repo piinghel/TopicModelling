@@ -4,7 +4,7 @@ import pickle
 from sklearn.metrics.pairwise import cosine_similarity
 import plotly.express as px
 
-from modules import Top2Vec_custom
+from modules import top2vec
 from modules import topics_over_time as top_over_time
 
 
@@ -24,7 +24,7 @@ def load_model(
             model = pickle.load(file)
 
     else:
-        model = Top2Vec_custom.Top2Vec(
+        model = top2vec.Top2Vec(
             documents=paragraphs,
             embedding_model='distiluse-base-multilingual-cased',
             load_doc_embed=True,

@@ -1,4 +1,5 @@
-# Author: Dimo Angelov
+# Original author: Dimo Angelov
+# Modification: Pieter-Jan Inghelbrecht
 #
 # License: BSD 3 clause
 import logging
