@@ -21,7 +21,7 @@ from sklearn.feature_extraction import text
 from nltk import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from nltk.stem.porter import PorterStemmer
-from textblob import TextBlob
+# from textblob import TextBlob
 
 
 
@@ -64,11 +64,11 @@ class LemmaTokenizer(object):
             return [self.wnl.lemmatize(t) for t in word_tokenize(articles)]
 
 
-def textblob_tokenizer(str_input):
-    blob = TextBlob(str_input.lower())
-    tokens = blob.words
-    words = [token.stem() for token in tokens]
-    return words
+# def textblob_tokenizer(str_input):
+#     blob = TextBlob(str_input.lower())
+#     tokens = blob.words
+#     words = [token.stem() for token in tokens]
+#     return words
 
 # Use NLTK's PorterStemmer
 def stemming_tokenizer(str_input):
