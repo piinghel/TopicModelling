@@ -18,6 +18,10 @@ import tempfile
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import normalize
 from sklearn.feature_extraction import text
+from nltk import word_tokenize
+from nltk.stem import WordNetLemmatizer
+from nltk.stem.porter import PorterStemmer
+from textblob import TextBlob
 
 try:
     import hnswlib
@@ -47,6 +51,28 @@ logger.setLevel(logging.WARNING)
 sh = logging.StreamHandler()
 sh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger.addHandler(sh)
+porter_stemmer = PorterStemmer()
+
+class LemmaTokenizer(object):
+        def __init__(self):
+            self.wnl = WordNetLemmatizer()
+
+        def __call__(self, articles):
+
+            return [self.wnl.lemmatize(t) for t in word_tokenize(articles)]
+
+
+def textblob_tokenizer(str_input):
+    blob = TextBlob(str_input.lower())
+    tokens = blob.words
+    words = [token.stem() for token in tokens]
+    return words
+
+# Use NLTK's PorterStemmer
+def stemming_tokenizer(str_input):
+    words = re.sub(r"[^A-Za-z0-9\-]", " ", str_input).lower().split()
+    words = [porter_stemmer.stem(word) for word in words]
+    return words
 
 
 def default_tokenizer(doc):
@@ -124,7 +150,7 @@ class Top2Vec:
         a longer time to train. The deep-learn option will learn the best quality
         vectors but will take significant time to train. The valid string speed
         options are:
-        
+
             * fast-learn
             * learn
             * deep-learn
@@ -151,11 +177,11 @@ class Top2Vec:
     workers: int (Optional)
         The amount of worker threads to be used in training the model. Larger
         amount will lead to faster training.
-    
+
     tokenizer: callable (Optional, default None)
         Override the default tokenization method. If None then
         gensim.utils.simple_preprocess will be used.
-    
+
     verbose: bool (Optional, default True)
         Whether to print status data during training.
     """
@@ -172,6 +198,7 @@ class Top2Vec:
                  min_df=0.005,
                  max_df=0.2,
                  ngram_range=(1,3),
+                 lemmatize=False,
                  load_doc_embed = False,
                  path_doc_embed = None,
                  save_doc_embed = True,
@@ -233,7 +260,7 @@ class Top2Vec:
             self.document_ids = np.array(range(0, len(documents)))
             self.doc_id2index = dict(zip(self.document_ids, list(range(0, len(self.document_ids)))))
             self.doc_id_type = np.int_
-        
+
         self.dim_reduction = None
         self.clustering = None
         self.load_doc_embed = load_doc_embed
@@ -250,12 +277,13 @@ class Top2Vec:
         self.max_df = max_df
         self.ngram_range = ngram_range
         self.random_seed = random_seed
-        
-        
+        self.lemmatize = lemmatize
 
-        acceptable_embedding_models = ["universal-sentence-encoder-multilingual",
-                                       "universal-sentence-encoder",
-                                       "distiluse-base-multilingual-cased"]
+        acceptable_embedding_models = ([
+                    "universal-sentence-encoder-multilingual",
+                    "universal-sentence-encoder",
+                    "distiluse-base-multilingual-cased"]
+        )
 
         self.embedding_model_path = embedding_model_path
 
@@ -279,7 +307,8 @@ class Top2Vec:
                 negative = 5
                 epochs = 1
             else:
-                raise ValueError("speed parameter needs to be one of: fast-learn, learn or deep-learn")
+                raise ValueError("speed parameter needs to be one of:\
+ fast-learn, learn or deep-learn")
 
             if workers is None:
                 pass
@@ -289,7 +318,6 @@ class Top2Vec:
                 raise ValueError("workers needs to be an int")
 
             doc2vec_args = {"vector_size": 300,
-                            "min_count": min_count,
                             "window": 15,
                             "sample": 1e-5,
                             "negative": negative,
@@ -329,10 +357,10 @@ class Top2Vec:
             logger.info('Pre-processing documents for training')
             train_corpus = self._embed_words(documents)
             self.document_vectors = self._embed_documents(
-                train_corpus=train_corpus, 
+                train_corpus=train_corpus,
                 load_doc_embed=self.load_doc_embed,
                 path_doc_embed=self.path_doc_embed,
-                save_doc_embed=self.save_doc_embed 
+                save_doc_embed=self.save_doc_embed
             )
 
         else:
@@ -390,13 +418,11 @@ class Top2Vec:
         self.word_index = None
         self.serialized_word_index = None
         self.words_indexed = False
-        
-        
+
     def _update_steps(self, documents, step=1):
-        
-        
-        if step == 1: 
-           
+
+        if step == 1:
+
             logger.info('Pre-processing documents for training')
             self._embed_words(documents)
             # create 5D embeddings of documents
@@ -406,9 +432,9 @@ class Top2Vec:
             # find dense areas of document vectors
             logger.info('Finding dense areas of documents')
             cluster = self._clustering()
-        
+
         elif step == 2:
-            
+
             # create 5D embeddings of documents
             logger.info('Creating lower dimension embedding of documents')
             dim_reducting = self._dim_reduction()
@@ -416,14 +442,14 @@ class Top2Vec:
             # find dense areas of document vectors
             logger.info('Finding dense areas of documents')
             cluster = self._clustering()
-        
+
         elif step == 3:
-            
+
             # find dense areas of document vectors
             logger.info('Finding dense areas of documents')
             cluster = self._clustering()
-        
-        
+
+
         # calculate topic vectors from dense areas of documents
         logger.info('Finding topics')
 
@@ -447,31 +473,47 @@ class Top2Vec:
 
         # re-order topics
         self._reorder_topics(hierarchy=False)
-        
-        
+
     def _embed_words(self, documents):
-        
+        """
+        embed words
+        """
         self._check_import_status()
         # preprocess documents
         train_corpus = [' '.join(self._tokenizer(doc)) for doc in documents]
 
         # preprocess vocabulary
-        vectorizer = CountVectorizer(
-            min_df=self.min_df,
-            max_df=self.max_df, 
-            ngram_range=self.ngram_range,
-            stop_words = text.ENGLISH_STOP_WORDS.union(self.add_stops_words)       
-        )
+
+        if self.lemmatize:
+            vectorizer = CountVectorizer(
+                tokenizer=textblob_tokenizer,
+                strip_accents='unicode',
+                lowercase=True,
+                min_df=self.min_df,
+                max_df=self.max_df,
+                ngram_range=self.ngram_range,
+                stop_words=text.ENGLISH_STOP_WORDS.union(self.add_stops_words)
+            )
+        else:
+            vectorizer = CountVectorizer(
+                strip_accents='unicode',
+                lowercase=True,
+                min_df=self.min_df,
+                max_df=self.max_df,
+                ngram_range=self.ngram_range,
+                stop_words = text.ENGLISH_STOP_WORDS.union(self.add_stops_words)
+            )
+
         _ = vectorizer.fit_transform(train_corpus)
         self.vocab = vectorizer.get_feature_names()
         self._check_model_status()
         # embed words
         self.word_indexes = dict(zip(self.vocab, range(len(self.vocab))))
         self.word_vectors = self._l2_normalize(np.array(self.embed(self.vocab)))
-        
+
         return train_corpus
-        
-    
+
+
     def _dim_reduction(self):
         
         # create 5D embeddings of documents
@@ -484,19 +526,16 @@ class Top2Vec:
         
         self.dim_reduction = umap_model
 
-    
+
     def _clustering(self):  
-        
+
         # find dense areas of document vectors
         logger.info('Finding dense areas of documents')
         cluster = hdbscan.HDBSCAN(
             min_cluster_size=self.min_cluster_size,
             metric=self.metric_hdbscan,
             cluster_selection_method=self.cluster_selection_method).fit(self.dim_reduction.embedding_)
-        
         self.clustering = cluster
-        
-        
 
     def save(self, file):
         """
@@ -2185,7 +2224,7 @@ class Top2Vec:
         else:
             return doc_scores, doc_ids
 
-    def generate_topic_wordcloud(self, topic_num, background_color="black", reduced=False):
+    def generate_topic_wordcloud(self, topic_num, background_color="white", reduced=False):
         """
         Create a word cloud for a topic.
 
@@ -2223,11 +2262,13 @@ class Top2Vec:
             self._validate_topic_num(topic_num, reduced)
             word_score_dict = dict(zip(self.topic_words[topic_num], self.topic_word_scores[topic_num]))
 
-        plt.figure(figsize=(16, 4),
+        plt.figure(figsize=(10, 8),
                    dpi=200)
         plt.axis("off")
         plt.imshow(
-            WordCloud(width=1600,
+            WordCloud(width=600,
                       height=400,
                       background_color=background_color).generate_from_frequencies(word_score_dict))
-        plt.title("Topic " + str(topic_num), loc='left', fontsize=25, pad=20)
+        plt.title("Topic " + str(topic_num), loc='left', fontsize=20, pad=20)
+
+
