@@ -2253,7 +2253,8 @@ class Top2Vec:
         plt.imshow(
             WordCloud(width=600,
                       height=400,
-                      background_color=background_color).generate_from_frequencies(word_score_dict))
+                      background_color=background_color,
+                      random_state=69).generate_from_frequencies(word_score_dict))
         plt.title("Topic " + str(topic_num), loc='left', fontsize=20, pad=20)
 
 

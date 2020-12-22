@@ -9,7 +9,7 @@ from modules import topics_over_time as top_over_time
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
 
-@st.cache(allow_output_mutation=True, show_spinner=True)
+@st.cache(allow_output_mutation=True, show_spinner=False)
 def load_model(
     paragraphs,
     from_disk=False,
@@ -35,7 +35,7 @@ def load_model(
     return model
 
 
-@st.cache(allow_output_mutation=True, show_spinner=True)
+@st.cache(allow_output_mutation=True, show_spinner=False)
 def make_figure(df):
     """
     make figure for topic loading for words
@@ -47,7 +47,7 @@ def make_figure(df):
     return fig
 
 
-@st.cache(allow_output_mutation=True, show_spinner=True)
+@st.cache(allow_output_mutation=True, show_spinner=False)
 def count_topics(df, model, var, value, topics_words, nr_words):
     """
     counts topics
@@ -75,7 +75,8 @@ def count_topics(df, model, var, value, topics_words, nr_words):
     return fig
 
 
-@st.cache(allow_output_mutation=True, show_spinner=True)
+
+@st.cache(allow_output_mutation=True, show_spinner=False)
 def construct_df_topic_words_scores(topic_words, word_scores, digits=2):
     """
     construct topics words with scores
