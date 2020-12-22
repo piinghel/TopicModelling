@@ -35,6 +35,7 @@ def load_model(
     return model
 
 
+@st.cache(allow_output_mutation=True, show_spinner=True)
 def make_figure(df):
     """
     make figure for topic loading for words
@@ -46,6 +47,7 @@ def make_figure(df):
     return fig
 
 
+@st.cache(allow_output_mutation=True, show_spinner=True)
 def count_topics(df, model, var, value, topics_words, nr_words):
     """
     counts topics
@@ -73,6 +75,7 @@ def count_topics(df, model, var, value, topics_words, nr_words):
     return fig
 
 
+@st.cache(allow_output_mutation=True, show_spinner=True)
 def construct_df_topic_words_scores(topic_words, word_scores, digits=2):
     """
     construct topics words with scores
