@@ -91,17 +91,20 @@ def main():
 
     st.sidebar.title("Model configurations")
 
-    dataset = st.sidebar.selectbox(
-     "Choose dataset",
-     ("REIT-Industrial", "All documents"))
+    # dataset = st.sidebar.selectbox(
+    #  "Choose dataset",
+    #  ("REIT-Industrial", "All documents"))
 
-    if dataset == "REIT-Industrial":
-        dir_doc_embed = "output/distBert_embedding_REIT-Industrial.npy"
-        dir_df = "data/CRS_processed_PyMuPDF_REIT-Industrial.txt"
+    # if dataset == "REIT-Industrial":
+    #     dir_doc_embed = "output/distBert_embedding_REIT-Industrial.npy"
+    #     dir_df = "data/CRS_processed_PyMuPDF_REIT-Industrial.txt"
 
-    elif dataset == "All documents":
-        dir_doc_embed = "output/distBert_embedding_all-doc.npy"
-        dir_df = "data/CRS_processed_PyMuPDF_All-Doc.txt"
+    # elif dataset == "All documents":
+    #     dir_doc_embed = "output/distBert_embedding_all-doc.npy"
+    #     dir_df = "data/CRS_processed_PyMuPDF_All-Doc.txt"
+    
+    dir_doc_embed = "output/distBert_embedding_REIT-Industrial.npy"
+    dir_df = "data/CRS_processed_PyMuPDF_REIT-Industrial.txt"
 
     df = pd.read_csv(dir_df, sep='\t')
     paragraphs = df.paragraph.values.tolist()
@@ -140,7 +143,8 @@ def main():
             max_value=1.0,
             step=0.005
             )
-    lemmatize = st.sidebar.checkbox("Lemmatize", value=False)
+    # lemmatize = st.sidebar.checkbox("Lemmatize", value=False)
+    lemmatize = False
     n_components = st.sidebar.number_input(
             "Number of dimension (dimensionality reduction)",
             value=5,

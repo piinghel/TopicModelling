@@ -18,10 +18,7 @@ import tempfile
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.preprocessing import normalize
 from sklearn.feature_extraction import text
-from nltk import word_tokenize
-from nltk.stem import WordNetLemmatizer
-from nltk.stem.porter import PorterStemmer
-# from textblob import TextBlob
+from textblob import TextBlob
 
 
 
@@ -53,29 +50,14 @@ logger.setLevel(logging.WARNING)
 sh = logging.StreamHandler()
 sh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger.addHandler(sh)
-#porter_stemmer = PorterStemmer()
 
 
-class LemmaTokenizer(object):
-        def __init__(self):
-            self.wnl = WordNetLemmatizer()
-
-        def __call__(self, articles):
-
-            return [self.wnl.lemmatize(t) for t in word_tokenize(articles)]
-
-
-# def textblob_tokenizer(str_input):
-#     blob = TextBlob(str_input.lower())
-#     tokens = blob.words
-#     words = [token.stem() for token in tokens]
-#     return words
-
-# Use NLTK's PorterStemmer
-def stemming_tokenizer(str_input):
-    words = re.sub(r"[^A-Za-z0-9\-]", " ", str_input).lower().split()
-    words = [porter_stemmer.stem(word) for word in words]
+def textblob_tokenizer(str_input):
+    blob = TextBlob(str_input.lower())
+    tokens = blob.words
+    words = [token.stem() for token in tokens]
     return words
+
 
 
 def default_tokenizer(doc):
@@ -489,7 +471,7 @@ class Top2Vec:
 
         if self.lemmatize:
             vectorizer = CountVectorizer(
-                tokenizer=LemmaTokenizer(),
+                tokenizer=textblob_tokenizer,
                 strip_accents='unicode',
                 lowercase=True,
                 min_df=self.min_df,
