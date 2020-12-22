@@ -105,7 +105,7 @@ def main():
     # elif dataset == "All documents":
     #     dir_doc_embed = "output/distBert_embedding_all-doc.npy"
     #     dir_df = "data/CRS_processed_PyMuPDF_All-Doc.txt"
-    
+
     dir_doc_embed = "output/distBert_embedding_REIT-Industrial.npy"
     dir_df = "data/CRS_processed_PyMuPDF_REIT-Industrial.txt"
 
@@ -193,25 +193,25 @@ def main():
                         topic_words=topic_words,
                         word_scores=word_scores,
                         digits=2
-                        ).iloc[:, 0:5]
+                        ).iloc[:, 0:10]
     topics_top2Vec["size"] = topic_sizes
     expander_topics = st.beta_expander("Show topics")
     expander_topics.dataframe(topics_top2Vec)
     expander_topics.write("\n")
     with expander_topics.beta_container():
         c1_doc, c2_doc = st.beta_columns((1, 1))
-        top1 = c1_doc.number_input(
+        top_nr1 = c1_doc.number_input(
             "Choose topic ",
             value=0,
             min_value=0,
             max_value=model.get_num_topics())
-        top2 = c2_doc.number_input(
+        top_nr2 = c2_doc.number_input(
             "Choose topic",
             value=1,
             min_value=0,
             max_value=model.get_num_topics())
-        c1_doc.pyplot(model.generate_topic_wordcloud(topic_num=top1))
-        c2_doc.pyplot(model.generate_topic_wordcloud(topic_num=top2))
+        c1_doc.pyplot(model.generate_topic_wordcloud(topic_num=top_nr1))
+        c2_doc.pyplot(model.generate_topic_wordcloud(topic_num=top_nr2))
 
     expander_keyword = st.beta_expander("Show keyword/sentence topic loadings")
     keywords = expander_keyword.text_area(
