@@ -218,7 +218,8 @@ def main():
     keywords = expander_keyword.text_area(
         label="Input keywords (no comma required) or \
 small paragraphs (max 125 words).",
-        value="bénévolat or charity of liefdadigheidsdoel oder Wohltätigkeitsarbeit")
+        value="bénévolat or charity of \
+liefdadigheidsdoel oder Wohltätigkeitsarbeit")
     keyword_embed = model.embed([keywords])
     res = cosine_similarity(keyword_embed, model.topic_vectors)
     scores = pd.DataFrame(res, index=["Cosine similiarity"]).T
