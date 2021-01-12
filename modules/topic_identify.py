@@ -412,7 +412,7 @@ class TopicIdentify:
             combined_inds = smallest_inds + most_sim_inds
             hierarchy.append(combined_inds)
 
-        self.topic_vec_reduced = top_vecs
+        self.topic_vectors_reduced = top_vecs
         self.topic_sizes_reduced = top_sizes
         self.topic_hierarchy = hierarchy
 

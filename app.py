@@ -30,6 +30,41 @@ def get_table_download_link(df):
     return f'<a href="data:application/octet-stream;base64,{b64.decode()}" download="topics_word_scores.xlsx">Download csv file</a>' # decode b'abc' => abc
 
 
+def construct_topics_df(model, reduced=False):
+    """
+    construct dataframe of topics words, scores, and sizes
+    """
+
+    if reduced:
+
+        topic_words = model.topic_words_reduced
+        word_scores = model.topic_word_scores_reduced
+        topic_sizes = model.topic_sizes_reduced
+
+    else:
+
+        topic_words = model.topic_words
+        word_scores = model.topic_word_scores
+        topic_sizes = model.topic_sizes.values.tolist()
+
+    df_topics = construct_df_topic_words_scores(
+                            topic_words=topic_words,
+                            word_scores=word_scores,
+                            digits=2
+                            ).iloc[:, 0:10]
+
+    df_topics["size"] = topic_sizes
+    if reduced:
+        df_topics["hierarchy"] = model.topic_hierarchy
+        cols = ["hierarchy", "size"] + df_topics.columns.tolist()[0:10]
+    else:
+        df_topics["topic nr"] = list(range(0, len(topic_sizes)))
+        cols = ["topic nr", "size"] + df_topics.columns.tolist()[0:10]
+    df_topics = df_topics[cols].sort_values(by="size", ascending=False)
+
+    return df_topics.reset_index(inplace=False, drop=True)
+
+
 @st.cache(allow_output_mutation=True, show_spinner=False)
 def load_model(
         paragraphs,
@@ -252,21 +287,30 @@ see [here](https://hdbscan.readthedocs.io/en/latest/api.html).")
 
         model.update(step=update_step)
 
-    topic_words = model.topic_words
-    word_scores = model.topic_word_scores
-    topic_sizes = model.topic_sizes.values.tolist()
-    df_topics = construct_df_topic_words_scores(
-                        topic_words=topic_words,
-                        word_scores=word_scores,
-                        digits=2
-                        ).iloc[:, 0:10]
-    df_topics["size"] = topic_sizes
-    df_topics["topic nr"] = list(range(0, len(topic_sizes)))
-    cols = ["topic nr", "size"] + df_topics.columns.tolist()[0:9]
-    df_topics = df_topics[cols].sort_values(by="size", ascending=False)
+    if model.topic_words is not None:
+        topic_reduction = st.sidebar.checkbox("Topic reduction", value=False)
+        if topic_reduction:
+            nr_topics_red = st.sidebar.number_input(
+                            label="Choose Number of topics",
+                            min_value=2,
+                            value=len(model.topic_sizes),
+                            max_value=len(model.topic_sizes)
+                            )
+            if st.sidebar.button("Update number of topics"):
+                model.topic_reduction(num_topics=nr_topics_red)
 
     expander_topics = st.beta_expander("Show topics")
-    expander_topics.markdown("**Note:** topic 0 represents the noise topic!")
+    reduced_topic_df = False
+    if topic_reduction:
+        reduced_topic_df = expander_topics.checkbox(
+            "Show dataframe with reduced number of topics",
+            value=False)
+    df_topics = construct_topics_df(model, reduced_topic_df)
+    if not reduced_topic_df:
+        expander_topics.markdown("**Note:** topic 0 represents the noise topic!")
+    elif reduced_topic_df:
+        expander_topics.markdown("**Note:** the noise topic is removed \
+when merging. Hence, topic 0 is a valid topic here!")
     expander_topics.dataframe(df_topics)
     expander_topics.markdown(
         get_table_download_link(df_topics), unsafe_allow_html=True
@@ -275,27 +319,35 @@ see [here](https://hdbscan.readthedocs.io/en/latest/api.html).")
     expander_topics.write("\n")
     with expander_topics.beta_container():
         c1_doc, c2_doc = st.beta_columns((1, 1))
-        top_nr1 = c1_doc.number_input(
-            "Choose topic ",
-            value=0,
-            min_value=0,
-            max_value=(len(model.topic_sizes)-1)
+        top_nr1 = c1_doc.selectbox(
+            "Choose topic based on row index",
+            options=df_topics.index.values.tolist(),
+            index=0
             )
-        top_nr2 = c2_doc.number_input(
-            "Choose topic",
-            value=1,
-            min_value=0,
-            max_value=(len(model.topic_sizes)-1)
+        top_nr2 = c2_doc.selectbox(
+            "Choose topic based on row index",
+            options=df_topics.index.values.tolist(),
+            index=1
         )
-        c1_doc.pyplot(model.generate_topic_wordcloud(topic_num=top_nr1))
-        c2_doc.pyplot(model.generate_topic_wordcloud(topic_num=top_nr2))
+
+        c1_doc.pyplot(model.generate_topic_wordcloud(
+            topic_num=top_nr1,
+            reduced=reduced_topic_df,
+            background_color="white"))
+        c2_doc.pyplot(model.generate_topic_wordcloud(
+            topic_num=top_nr2,
+            reduced=reduced_topic_df,
+            background_color="white"))
 
     expander_keyword_topics = st.beta_expander(
         "Show keyword/sentence topic loadings")
+
     keywords_top = expander_keyword_topics.text_area(
         label="Input keywords for topic search (no comma required) or \
 small paragraphs (max 125 words).",
         value=example_text)
+
+    df_topics = construct_topics_df(model, False)
     keyword_embed = model.embedder.encode([keywords_top])
     res = cosine_similarity(keyword_embed, model.topic_vectors)
     scores = round(pd.DataFrame(res, index=["Cosine similiarity"]).T, 3)
@@ -308,7 +360,11 @@ small paragraphs (max 125 words).",
 
     expander_sim_matrix = st.beta_expander(
         "Topic similarity")
-    fig = model.topic_similiarity(reduced=False)
+    reduced_sim = False
+    if topic_reduction:
+        reduced_sim = expander_sim_matrix.checkbox(
+            "Similiarty on reduced number of topics", value=False)
+    fig = model.topic_similiarity(reduced=reduced_sim)
     expander_sim_matrix.plotly_chart(fig, use_container_width=True)
 
     expander_documents = st.beta_expander(
