@@ -82,6 +82,7 @@ def construct_df_topic_words_scores(topic_words, word_scores, digits=2):
 def main():
 
     st.sidebar.title("Model configurations")
+    st.title("Topic discovering")
 
     dataset = st.sidebar.selectbox(
      "Choose dataset",
@@ -97,6 +98,8 @@ liefdadigheidsdoel oder Wohltätigkeitsarbeit"
         dir_doc_embed = "output/distBert_embedding_newsgroup_subset.npy"
         dir_df = "data/newsgroup_subset.txt"
         example_text = "Religion and god and jesus"
+        st.sidebar.markdown("For more information about the newsgroup20 dataset, \
+see [here](https://scikit-learn.org/0.19/datasets/twenty_newsgroups.html).")
 
     df = pd.read_csv(dir_df, sep='\t')
     paragraphs = df.paragraph.values.tolist()
@@ -169,7 +172,7 @@ see [here](https://umap-learn.readthedocs.io/en/latest/basic_usage.html).")
                     )
     clustering_p.write(
         "For more information on the clustering algorithm \
-see [here](https://hdbscan.readthedocs.io/en/latest/api.html)")
+see [here](https://hdbscan.readthedocs.io/en/latest/api.html).")
     min_cluster_size = clustering_p.number_input(
             "Minimum cluster size",
             value=model.min_cluster_size,
@@ -178,7 +181,7 @@ see [here](https://hdbscan.readthedocs.io/en/latest/api.html)")
             )
 
     soft_clustering = clustering_p.checkbox("Soft clustering", value=False)
-    st.sidebar.write("The updating should take no longer than 3 minutes")
+    st.sidebar.write("The updating should take no longer than 3 minutes.")
     if st.sidebar.button("Update model configurations"):
 
         update_step = 3
