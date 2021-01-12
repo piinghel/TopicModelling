@@ -1,37 +1,27 @@
 import streamlit as st
 import pandas as pd
-import pickle
+import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 import plotly.express as px
 
-from modules import top2vec
-from modules import topics_over_time as top_over_time
+from modules import topic_identify
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
 
 @st.cache(allow_output_mutation=True, show_spinner=False)
 def load_model(
-    paragraphs,
-    from_disk=False,
-    model_dir="output/distilBert_REIT-Industrial.pkl",
-    path_doc_embed=None
-):
+        paragraphs,
+        doc_embed
+        ):
     """
-    load top2vec model
+    load  model
     """
-
-    if from_disk:
-        with open(model_dir, 'rb') as file:
-            model = pickle.load(file)
-
-    else:
-        model = top2vec.Top2Vec(
-            documents=paragraphs,
-            embedding_model='distiluse-base-multilingual-cased',
-            load_doc_embed=True,
-            save_doc_embed=False,
-            path_doc_embed=path_doc_embed
-        )
+    model = topic_identify.TopicIdentify(
+        documents=paragraphs,
+        doc_embedding=doc_embed,
+        embedding_model='distiluse-base-multilingual-cased',
+    )
+    model.perform_steps()
     return model
 
 
@@ -53,7 +43,7 @@ def count_topics(df, model, var, value, topics_words, nr_words):
     counts topics
     """
 
-    df["Topic"] = model.clustering.labels_
+    df["Topic"] = model.clusterer.labels_
     df_group = pd.DataFrame(df.groupby([var, "Topic"]).count().iloc[:, 0])
     df_group = df_group.rename(columns={df_group.columns[0]: "Count"})
     df_group_sort = (df_group.iloc[df_group.index.
@@ -61,9 +51,7 @@ def count_topics(df, model, var, value, topics_words, nr_words):
                      sort_values("Count", ascending=False))
     df_group_sort["Topic"] = df_group_sort.index.get_level_values(1)
     df_group_sort["Top words"] = df_group_sort["Topic"].apply(
-        (lambda x: list(topics_words.iloc[x, 0:nr_words]) if
-         x >= 0 else list(["None"])))
-
+        (lambda x: list(topics_words.iloc[x, 2: 2+nr_words])))
     fig = px.bar(df_group_sort.head(10),
                  x='Topic', y="Count",
                  text="Top words", title='10 highest topic counts')
@@ -73,7 +61,6 @@ def count_topics(df, model, var, value, topics_words, nr_words):
         yaxis_title="Count")
 
     return fig
-
 
 
 @st.cache(allow_output_mutation=True, show_spinner=False)
@@ -86,7 +73,7 @@ def construct_df_topic_words_scores(topic_words, word_scores, digits=2):
         store_l = []
         for j, el in enumerate(array):
             store_l.append((topic_words[i, j],
-                            round(word_scores[i, j], digits)))
+                            (float(str(word_scores[i, j])[0:5]))))
         topics_scores_df[i] = store_l
     return pd.DataFrame(topics_scores_df).T
 
@@ -94,110 +81,145 @@ def construct_df_topic_words_scores(topic_words, word_scores, digits=2):
 def main():
 
     st.sidebar.title("Model configurations")
-
-    # dataset = st.sidebar.selectbox(
-    #  "Choose dataset",
-    #  ("REIT-Industrial", "All documents"))
-
-    # if dataset == "REIT-Industrial":
-    #     dir_doc_embed = "output/distBert_embedding_REIT-Industrial.npy"
-    #     dir_df = "data/CRS_processed_PyMuPDF_REIT-Industrial.txt"
-
-    # elif dataset == "All documents":
-    #     dir_doc_embed = "output/distBert_embedding_all-doc.npy"
-    #     dir_df = "data/CRS_processed_PyMuPDF_All-Doc.txt"
-
     dir_doc_embed = "output/distBert_embedding_REIT-Industrial.npy"
     dir_df = "data/CRS_processed_PyMuPDF_REIT-Industrial.txt"
 
     df = pd.read_csv(dir_df, sep='\t')
     paragraphs = df.paragraph.values.tolist()
-    # model_dir = "output/distilBert_REIT-Industrial.pkl"
+    doc_embed = np.load(dir_doc_embed)
     model = load_model(
         paragraphs=paragraphs,
-        from_disk=False,
-        path_doc_embed=dir_doc_embed
+        doc_embed=doc_embed
     )
-
-    add_stops_words = st.sidebar.text_area(
+    st.sidebar.write("The paragraphs and word embeddings \
+were obtained using 'distiluse-base-multilingual-cased' from the \
+sentence transfromer library. For more information \
+see [here](https://www.sbert.net/).")
+    word_embed_p = st.sidebar.beta_expander(
+                    "Word embedding tuning parameters"
+                    )
+    word_embed_p.write(
+    "For more information on the preprocessing steps for the word embeddings\
+see [here](https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html).")
+    add_stops_words = word_embed_p.text_area(
         "Input stopwords (separate by comma)")
-    lower_ngrams = st.sidebar.number_input(
+    lower_ngrams = word_embed_p.number_input(
             "Lower bound ngrams",
-            value=1,
+            value=model.ngram_range[0],
             min_value=1,
             max_value=5
             )
-    upper_ngrams = st.sidebar.number_input(
+    upper_ngrams = word_embed_p.number_input(
             "Upper bound ngrams",
-            value=3,
+            value=model.ngram_range[1],
             min_value=1,
             max_value=5
     )
-    min_df = st.sidebar.slider(
+    min_df = word_embed_p.slider(
             "Minimum document frequency",
-            value=0.005,
+            value=model.min_df,
             min_value=0.0,
             max_value=0.2,
             step=0.005
             )
-    max_df = st.sidebar.slider(
+    max_df = word_embed_p.slider(
             "Maximum document frequency",
-            value=0.15,
+            value=model.max_df,
             min_value=0.05,
             max_value=1.0,
             step=0.005
             )
     # lemmatize = st.sidebar.checkbox("Lemmatize", value=False)
-    lemmatize = False
-    n_components = st.sidebar.number_input(
-            "Number of dimension (dimensionality reduction)",
-            value=5,
+    dim_reduc_p = st.sidebar.beta_expander(
+                    "Dimensionality reduction tuning parameters"
+                    )
+    dim_reduc_p.write(
+        "For more information on the dimensionality reduction algorithm \
+see [here](https://umap-learn.readthedocs.io/en/latest/basic_usage.html).")
+    n_components = dim_reduc_p.number_input(
+            "Number of dimensions",
+            value=model.n_components,
             min_value=1,
             max_value=500
             )
-    n_neighbors = st.sidebar.number_input(
-            "Number of neightsbors (dimensionality reduction)",
-            value=15,
+    n_neighbors = dim_reduc_p.number_input(
+            "Number of neightsbors",
+            value=model.n_neighbors,
             min_value=5,
             max_value=500
             )
-    min_cluster_size = st.sidebar.number_input(
-            "Minimum cluster size (clustering)",
-            value=15,
+    clustering_p = st.sidebar.beta_expander(
+                    "Clustering tuning parameters"
+                    )
+    clustering_p.write(
+        "For more information on the clustering algorithm \
+see [here](https://hdbscan.readthedocs.io/en/latest/api.html)")
+    min_cluster_size = clustering_p.number_input(
+            "Minimum cluster size",
+            value=model.min_cluster_size,
             min_value=5,
             max_value=500
             )
 
+    soft_clustering = clustering_p.checkbox("Soft clustering", value=False)
+    st.sidebar.write("The updating should take no more than 3 minutes")
     if st.sidebar.button("Update model configurations"):
 
-        model.ngram_range = (lower_ngrams, upper_ngrams)
-        model.min_df = min_df
-        model.max_df = max_df
-        model.n_neighbors = n_neighbors
-        model.n_components = n_components
-        model.min_cluster_size = min_cluster_size
-        model.add_stops_words = add_stops_words
-        model.random_seed = 69
-        model.lemmatize = lemmatize
+        update_step = 3
+        if model.ngram_range != (lower_ngrams, upper_ngrams):
+            model.ngram_range != (lower_ngrams, upper_ngrams)
+            update_step = 1
 
-        if (lower_ngrams != 1 or upper_ngrams != 3 or
-           min_df != 0.05 or max_df != 0.15 or lemmatize):
-            model._update_steps(documents=paragraphs, step=1)
-        elif n_components != 5 or n_neighbors != 15:
-            model._update_steps(documents=paragraphs, step=2)
-        elif min_cluster_size != 15:
-            model._update_steps(documents=paragraphs, step=3)
+        if model.min_df != min_df:
+            model.min_df = min_df
+            update_step = min(1, update_step)
 
-    topic_words, word_scores, _ = model.get_topics()
-    topic_sizes,  _ = model.get_topic_sizes()
-    topics_top2Vec = construct_df_topic_words_scores(
+        if model.max_df != max_df:
+            model.max_df = max_df
+            update_step = min(1, update_step)
+
+        if model.add_stops_words != add_stops_words:
+            model.add_stops_words = add_stops_words
+            update_step = min(1, update_step)
+
+        # if model.lemmatize != lemmatize:
+        #     model.lemmatize = lemmatize
+        #     update_step = min(1, update_step)
+
+        if model.n_neighbors != n_neighbors:
+            model.n_neighbors = n_neighbors
+            update_step = min(2, update_step)
+
+        if model.n_components != n_components:
+            model.n_components = n_components
+            update_step = min(2, update_step)
+
+        if model.min_cluster_size != min_cluster_size:
+            model.min_cluster_size = min_cluster_size
+            update_step = min(2, update_step)
+
+        if model.soft_clustering != soft_clustering:
+            model.soft_clustering = soft_clustering
+            update_step = min(3, update_step)
+
+        model.update(step=update_step)
+
+    topic_words = model.topic_words
+    word_scores = model.topic_word_scores
+    topic_sizes = model.topic_sizes.values.tolist()
+    df_topics = construct_df_topic_words_scores(
                         topic_words=topic_words,
                         word_scores=word_scores,
                         digits=2
                         ).iloc[:, 0:10]
-    topics_top2Vec["size"] = topic_sizes
+    df_topics["size"] = topic_sizes
+    df_topics["topic nr"] = list(range(-1, len(word_scores)-1))
+    cols = ["topic nr", "size"] + df_topics.columns.tolist()[0:9]
+    df_topics = df_topics[cols].sort_values(by="size", ascending=False)
+
     expander_topics = st.beta_expander("Show topics")
-    expander_topics.dataframe(topics_top2Vec)
+    expander_topics.markdown("**Note:** topic -1 represents the noise topic!")
+    expander_topics.dataframe(df_topics)
     expander_topics.write("\n")
     with expander_topics.beta_container():
         c1_doc, c2_doc = st.beta_columns((1, 1))
@@ -205,58 +227,90 @@ def main():
             "Choose topic ",
             value=0,
             min_value=0,
-            max_value=model.get_num_topics())
+            max_value=len(model.topic_sizes))
+
         top_nr2 = c2_doc.number_input(
             "Choose topic",
             value=1,
             min_value=0,
-            max_value=model.get_num_topics())
+            max_value=len(model.topic_sizes))
         c1_doc.pyplot(model.generate_topic_wordcloud(topic_num=top_nr1))
         c2_doc.pyplot(model.generate_topic_wordcloud(topic_num=top_nr2))
 
-    expander_keyword = st.beta_expander("Show keyword/sentence topic loadings")
-    keywords = expander_keyword.text_area(
-        label="Input keywords (no comma required) or \
+    expander_keyword_topics = st.beta_expander(
+        "Show keyword/sentence topic loadings")
+    keywords_top = expander_keyword_topics.text_area(
+        label="Input keywords for topic search (no comma required) or \
 small paragraphs (max 125 words).",
         value="bénévolat or charity of \
 liefdadigheidsdoel oder Wohltätigkeitsarbeit")
-    keyword_embed = model.embed([keywords])
+    keyword_embed = model.embedder.encode([keywords_top])
     res = cosine_similarity(keyword_embed, model.topic_vectors)
-    scores = pd.DataFrame(res, index=["Cosine similiarity"]).T
-    scores["Topic"] = list(range(0, len(scores)))
+    scores = round(pd.DataFrame(res, index=["Cosine similiarity"]).T, 3)
+    scores["Topic"] = list(range(-1, len(scores)-1))
     scores["Top words"] = scores["Topic"].apply(
-        lambda x: list(topics_top2Vec.iloc[x, 0:3]))
+        lambda x: list(df_topics.iloc[x, 2:5]))
     scores.sort_values(by="Cosine similiarity", ascending=False, inplace=True)
     fig = make_figure(scores)
-    expander_keyword.plotly_chart(fig, use_container_width=True)
+    expander_keyword_topics.plotly_chart(fig, use_container_width=True)
+
+    expander_sim_matrix = st.beta_expander(
+        "Topic similarity")
+    fig = model.topic_similiarity(reduced=False)
+    expander_sim_matrix.plotly_chart(fig, use_container_width=True)
 
     expander_documents = st.beta_expander(
-        "Show most similar documents for topic")
+        "Search topic by documents")
     with expander_documents.beta_container():
         c1_doc, c2_doc = st.beta_columns((1, 1))
-        topic_num = c1_doc.number_input("Choose topic number", value=1)
+        topic_num = (
+            c1_doc.number_input(
+                "Choose topic number",
+                value=2,
+                min_value=0,
+                max_value=len(model.topic_sizes)
+                )
+            )
         num_docs = c2_doc.number_input(
-            "Choose number of documents to show", value=3)
+            "Number of documents to show",
+            value=3,
+            min_value=0,
+            max_value=10
+            )
 
-    documents, document_scores, document_ids = (
-                model.search_documents_by_topic(
-                    topic_num=topic_num, num_docs=num_docs))
-    for doc, score, doc_id in zip(documents, document_scores, document_ids):
-        expander_documents.write(f"Document: {doc_id}, Filename (Company and year):  \
-{df.iloc[doc_id,:].filename}, Score: {round(score,2)}")
-        expander_documents.write(doc)
+    idx, scores = (
+                model.search_topic_by_documents(
+                    topic_nr=topic_num, n=num_docs))
+    for score, id in zip(scores, idx):
+        expander_documents.write(f"Document: {id}, Filename (Company and year):  \
+{df.iloc[id,:].filename}, Score: {str(score)[0:5]}")
+        expander_documents.write(df.iloc[id, :].paragraph)
         expander_documents.write()
 
-    expander_topics_time = st.beta_expander("Show topics over time")
-    fig_topics_year, _, _ = top_over_time.topics_over_time(
-            model=model,
-            df_paragraphs=df,
-            num_topics=5,
-            reduced=True,
-            make_fig=True
-    )
-    expander_topics_time.plotly_chart(
-        fig_topics_year, use_container_width=True)
+    expander_keywords_docs = st.beta_expander(
+        "Search documents by keywords")
+    with expander_keywords_docs.beta_container():
+        c1_key, c2_key = st.beta_columns((1, 1))
+        keywords_doc = c1_key.text_area(
+            label="Input keywords for documents search (no comma required) or \
+small paragraphs (max 125 words).",
+            value="bénévolat or charity of \
+liefdadigheidsdoel oder Wohltätigkeitsarbeit")
+        num_docs = c2_key.number_input(
+            "Choose number of documents to show",
+            value=3,
+            min_value=0,
+            max_value=10
+        )
+
+    idx, scores = (
+                model.documents_by_keywords(
+                    keywords=keywords_doc, n=num_docs))
+    for score, id in zip(scores, idx):
+        expander_keywords_docs.write(f"Document: {id}, Filename (Company and year):  \
+{df.iloc[id,:].filename}, Score: {str(score)[0:5]}")
+        expander_keywords_docs.write(df.iloc[id, :].paragraph)
+        expander_keywords_docs.write()
 
     expander_count_topics = st.beta_expander(
             "Count topics for a chosen variable and value")
@@ -272,12 +326,13 @@ liefdadigheidsdoel oder Wohltätigkeitsarbeit")
             model=model,
             var=var,
             value=value,
-            topics_words=topics_top2Vec,
+            topics_words=df_topics,
             nr_words=3
         )
 
         expander_count_topics.plotly_chart(
-            fig_count_topics, use_container_width=True)
+            fig_count_topics, use_container_width=True
+        )
 
 
 if __name__ == "__main__":
