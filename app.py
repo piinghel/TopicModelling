@@ -255,7 +255,6 @@ see [here](https://hdbscan.readthedocs.io/en/latest/api.html).")
             min_value=0,
             max_value=(len(model.topic_sizes)-1)
             )
-        st.write(len(model.topic_sizes))
         top_nr2 = c2_doc.number_input(
             "Choose topic",
             value=1,
