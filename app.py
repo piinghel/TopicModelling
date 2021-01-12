@@ -101,10 +101,12 @@ liefdadigheidsdoel oder Wohltätigkeitsarbeit"
     df = pd.read_csv(dir_df, sep='\t')
     paragraphs = df.paragraph.values.tolist()
     doc_embed = np.load(dir_doc_embed)
+
     model = load_model(
-        paragraphs=paragraphs,
-        doc_embed=doc_embed
-    )
+            paragraphs=paragraphs,
+            doc_embed=doc_embed
+        )
+
     st.sidebar.write("The paragraphs and word embeddings \
 were obtained using 'distiluse-base-multilingual-cased' from the \
 sentence transfromer library. For more information \
@@ -180,8 +182,15 @@ see [here](https://hdbscan.readthedocs.io/en/latest/api.html)")
     if st.sidebar.button("Update model configurations"):
 
         update_step = 3
+
+        if dataset != model.dataset_name:
+            model.dataset_name = dataset
+            model.documents = paragraphs
+            model.doc_embedding = doc_embed
+            update_step = min(1, update_step)
+
         if model.ngram_range != (lower_ngrams, upper_ngrams):
-            model.ngram_range != (lower_ngrams, upper_ngrams)
+            model.ngram_range = (lower_ngrams, upper_ngrams)
             update_step = min(1, update_step)
 
         if model.min_df != min_df:
@@ -288,7 +297,7 @@ small paragraphs (max 125 words).",
             )
         num_docs = c2_doc.number_input(
             "Number of documents to show",
-            value=1,
+            value=3,
             min_value=0,
             max_value=10
             )

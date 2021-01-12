@@ -57,6 +57,7 @@ class TopicIdentify:
                 min_df=0.005,
                 max_df=0.2,
                 ngram_range=(1, 3),
+                dataset_name="REIT-Industrial",
                 random_state=69):
 
         self.documents = documents
@@ -79,6 +80,7 @@ class TopicIdentify:
         self.embedding_model = embedding_model
         self.save_doc_embed = save_doc_embed
         self.path_doc_embed = path_doc_embed
+        self.dataset_name = dataset_name
         self.random_state = random_state
         self.dim_reduction_fit = None
         self.clusterer = None
