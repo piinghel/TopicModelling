@@ -60,7 +60,10 @@ class TopicIdentify:
                 random_state=69):
 
         self.documents = documents
-        self.doc_embedding = self._l2_normalize(doc_embedding)
+        if doc_embedding is not None:
+            self.doc_embedding = self._l2_normalize(doc_embedding)
+        else:
+            self.doc_embedding = None
         self.n_neighbors = n_neighbors
         self.n_components = n_components
         self.metric_umap = metric_umap
@@ -236,14 +239,16 @@ class TopicIdentify:
 
         for ind in range(0, batches):
             document_vectors.append(
-                self.embed(self.documents[current:current + batch_size])
+                self.embedder.encode(
+                    self.documents[current:current + batch_size])
                 )
             pbar.update(1)
             current += batch_size
 
         if extra > 0:
             document_vectors.append(
-                self.embed(self.documentstrain_corpus[current:current + extra])
+                self.embedder.encode(
+                    self.documentstrain_corpus[current:current + extra])
             )
         pbar.update(1)
         pbar.close()

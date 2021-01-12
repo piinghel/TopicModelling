@@ -43,7 +43,7 @@ def count_topics(df, model, var, value, topics_words, nr_words):
     counts topics
     """
 
-    df["Topic"] = model.clusterer.labels_
+    df["Topic"] = model.clusterer.labels_ + 1
     df_group = pd.DataFrame(df.groupby([var, "Topic"]).count().iloc[:, 0])
     df_group = df_group.rename(columns={df_group.columns[0]: "Count"})
     df_group_sort = (df_group.iloc[df_group.index.
@@ -51,7 +51,8 @@ def count_topics(df, model, var, value, topics_words, nr_words):
                      sort_values("Count", ascending=False))
     df_group_sort["Topic"] = df_group_sort.index.get_level_values(1)
     df_group_sort["Top words"] = df_group_sort["Topic"].apply(
-        (lambda x: list(topics_words.iloc[x, 2: 2+nr_words])))
+        (lambda x: list(topics_words.sort_values(by="topic nr").
+         iloc[x, 2: 2+nr_words])))
     fig = px.bar(df_group_sort.head(10),
                  x='Topic', y="Count",
                  text="Top words", title='10 highest topic counts')
@@ -81,8 +82,21 @@ def construct_df_topic_words_scores(topic_words, word_scores, digits=2):
 def main():
 
     st.sidebar.title("Model configurations")
-    dir_doc_embed = "output/distBert_embedding_REIT-Industrial.npy"
-    dir_df = "data/CRS_processed_PyMuPDF_REIT-Industrial.txt"
+
+    dataset = st.sidebar.selectbox(
+     "Choose dataset",
+     ("REIT-Industrial", "Newsgroup20 Subset"))
+
+    if dataset == "REIT-Industrial":
+        dir_doc_embed = "output/distBert_embedding_REIT-Industrial.npy"
+        dir_df = "data/CRS_processed_PyMuPDF_REIT-Industrial.txt"
+        example_text = "bénévolat or charity of \
+liefdadigheidsdoel oder Wohltätigkeitsarbeit"
+
+    elif dataset == "Newsgroup20 Subset":
+        dir_doc_embed = "output/distBert_embedding_newsgroup_subset.npy"
+        dir_df = "data/newsgroup_subset.txt"
+        example_text = "Religion and god and jesus"
 
     df = pd.read_csv(dir_df, sep='\t')
     paragraphs = df.paragraph.values.tolist()
@@ -162,13 +176,13 @@ see [here](https://hdbscan.readthedocs.io/en/latest/api.html)")
             )
 
     soft_clustering = clustering_p.checkbox("Soft clustering", value=False)
-    st.sidebar.write("The updating should take no more than 3 minutes")
+    st.sidebar.write("The updating should take no longer than 3 minutes")
     if st.sidebar.button("Update model configurations"):
 
         update_step = 3
         if model.ngram_range != (lower_ngrams, upper_ngrams):
             model.ngram_range != (lower_ngrams, upper_ngrams)
-            update_step = 1
+            update_step = min(1, update_step)
 
         if model.min_df != min_df:
             model.min_df = min_df
@@ -213,12 +227,12 @@ see [here](https://hdbscan.readthedocs.io/en/latest/api.html)")
                         digits=2
                         ).iloc[:, 0:10]
     df_topics["size"] = topic_sizes
-    df_topics["topic nr"] = list(range(-1, len(word_scores)-1))
+    df_topics["topic nr"] = list(range(0, len(topic_sizes)))
     cols = ["topic nr", "size"] + df_topics.columns.tolist()[0:9]
     df_topics = df_topics[cols].sort_values(by="size", ascending=False)
 
     expander_topics = st.beta_expander("Show topics")
-    expander_topics.markdown("**Note:** topic -1 represents the noise topic!")
+    expander_topics.markdown("**Note:** topic 0 represents the noise topic!")
     expander_topics.dataframe(df_topics)
     expander_topics.write("\n")
     with expander_topics.beta_container():
@@ -227,13 +241,15 @@ see [here](https://hdbscan.readthedocs.io/en/latest/api.html)")
             "Choose topic ",
             value=0,
             min_value=0,
-            max_value=len(model.topic_sizes))
-
+            max_value=(len(model.topic_sizes)-1)
+            )
+        st.write(len(model.topic_sizes))
         top_nr2 = c2_doc.number_input(
             "Choose topic",
             value=1,
             min_value=0,
-            max_value=len(model.topic_sizes))
+            max_value=(len(model.topic_sizes)-1)
+        )
         c1_doc.pyplot(model.generate_topic_wordcloud(topic_num=top_nr1))
         c2_doc.pyplot(model.generate_topic_wordcloud(topic_num=top_nr2))
 
@@ -242,14 +258,13 @@ see [here](https://hdbscan.readthedocs.io/en/latest/api.html)")
     keywords_top = expander_keyword_topics.text_area(
         label="Input keywords for topic search (no comma required) or \
 small paragraphs (max 125 words).",
-        value="bénévolat or charity of \
-liefdadigheidsdoel oder Wohltätigkeitsarbeit")
+        value=example_text)
     keyword_embed = model.embedder.encode([keywords_top])
     res = cosine_similarity(keyword_embed, model.topic_vectors)
     scores = round(pd.DataFrame(res, index=["Cosine similiarity"]).T, 3)
-    scores["Topic"] = list(range(-1, len(scores)-1))
+    scores["Topic"] = list(range(0, len(scores)))
     scores["Top words"] = scores["Topic"].apply(
-        lambda x: list(df_topics.iloc[x, 2:5]))
+        lambda x: list(df_topics.sort_values(by="topic nr").iloc[x, 2:5]))
     scores.sort_values(by="Cosine similiarity", ascending=False, inplace=True)
     fig = make_figure(scores)
     expander_keyword_topics.plotly_chart(fig, use_container_width=True)
@@ -266,14 +281,14 @@ liefdadigheidsdoel oder Wohltätigkeitsarbeit")
         topic_num = (
             c1_doc.number_input(
                 "Choose topic number",
-                value=2,
+                value=0,
                 min_value=0,
-                max_value=len(model.topic_sizes)
+                max_value=(len(model.topic_sizes)-1)
                 )
             )
         num_docs = c2_doc.number_input(
             "Number of documents to show",
-            value=3,
+            value=1,
             min_value=0,
             max_value=10
             )
@@ -282,8 +297,7 @@ liefdadigheidsdoel oder Wohltätigkeitsarbeit")
                 model.search_topic_by_documents(
                     topic_nr=topic_num, n=num_docs))
     for score, id in zip(scores, idx):
-        expander_documents.write(f"Document: {id}, Filename (Company and year):  \
-{df.iloc[id,:].filename}, Score: {str(score)[0:5]}")
+        expander_documents.write(f"Document: {id}, Score: {str(score)[0:5]}")
         expander_documents.write(df.iloc[id, :].paragraph)
         expander_documents.write()
 
@@ -294,8 +308,7 @@ liefdadigheidsdoel oder Wohltätigkeitsarbeit")
         keywords_doc = c1_key.text_area(
             label="Input keywords for documents search (no comma required) or \
 small paragraphs (max 125 words).",
-            value="bénévolat or charity of \
-liefdadigheidsdoel oder Wohltätigkeitsarbeit")
+            value=example_text)
         num_docs = c2_key.number_input(
             "Choose number of documents to show",
             value=3,
@@ -307,32 +320,33 @@ liefdadigheidsdoel oder Wohltätigkeitsarbeit")
                 model.documents_by_keywords(
                     keywords=keywords_doc, n=num_docs))
     for score, id in zip(scores, idx):
-        expander_keywords_docs.write(f"Document: {id}, Filename (Company and year):  \
-{df.iloc[id,:].filename}, Score: {str(score)[0:5]}")
+        expander_keywords_docs.write(f"Document: {id}, \
+Score: {str(score)[0:5]}")
         expander_keywords_docs.write(df.iloc[id, :].paragraph)
         expander_keywords_docs.write()
 
-    expander_count_topics = st.beta_expander(
-            "Count topics for a chosen variable and value")
-    with expander_count_topics.beta_container():
-        c1_count, c2_count = st.beta_columns((1, 1))
-        var = c1_count.selectbox(
-            "Choose variable",
-            ("company", "industry", "sector", "filename"))
-        values = df[var].unique()
-        value = c2_count.selectbox("Choose value", values)
-        fig_count_topics = count_topics(
-            df=df,
-            model=model,
-            var=var,
-            value=value,
-            topics_words=df_topics,
-            nr_words=3
-        )
+    if dataset == "REIT-Industrial":
+        expander_count_topics = st.beta_expander(
+                "Count topics for a chosen variable and value")
+        with expander_count_topics.beta_container():
+            c1_count, c2_count = st.beta_columns((1, 1))
+            var = c1_count.selectbox(
+                "Choose variable",
+                ("company", "industry", "sector", "filename"))
+            values = df[var].unique()
+            value = c2_count.selectbox("Choose value", values)
+            fig_count_topics = count_topics(
+                df=df,
+                model=model,
+                var=var,
+                value=value,
+                topics_words=df_topics,
+                nr_words=3
+            )
 
-        expander_count_topics.plotly_chart(
-            fig_count_topics, use_container_width=True
-        )
+            expander_count_topics.plotly_chart(
+                fig_count_topics, use_container_width=True
+            )
 
 
 if __name__ == "__main__":
