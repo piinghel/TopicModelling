@@ -14,7 +14,7 @@ def main():
     # choose dataset
     dataset = st.sidebar.selectbox(
         "Choose dataset",
-        ("REIT-Industrial", "Newsgroup20 Subset")
+        (["REIT-Industrial"])
      )
     # loads data and embeddings
     sentence_model = helper.load_sentence_model(
@@ -49,7 +49,7 @@ For more information see [here](https://www.sbert.net/).")
     )
     # parameters clustering
     (model, min_cluster_size,
-     min_samples, selection_epsilon, soft_clustering) = (
+     min_samples, selection_epsilon) = (
         helper.params_clustering(model)
     )
     st.sidebar.markdown("Do not forget to hit the buttom **Update model configurations** \
@@ -70,15 +70,15 @@ The updating should take no longer than 3 minutes.")
                     n_components=n_components,
                     densmap=densmap,
                     min_cluster_size=min_cluster_size,
-                    soft_clustering=soft_clustering,
                     min_samples=min_samples,
                     selection_epsilon=selection_epsilon
                 )
 
     # apply topic reduction?
     topic_reduction = st.sidebar.checkbox("Topic reduction", value=False)
-    st.sidebar.markdown("Do not foret to hit the buttom **Update number of topic** \
-when changing the number of topics.")
+    if topic_reduction:
+        st.sidebar.markdown("Do not foret to hit the **Update number of topics** \
+buttom when changing the number of topics.")
 
     # Section 1: Table with topics
     expander_topics, reduced_topic_sec_tw,  = (

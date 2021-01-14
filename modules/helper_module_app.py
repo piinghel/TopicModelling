@@ -280,20 +280,20 @@ def params_clustering(model):
         "For more information on the clustering algorithm \
 see [here](https://hdbscan.readthedocs.io/en/latest/api.html).")
 
-    min_cluster_size = clustering.slider(
+    min_cluster_size = clustering.number_input(
             "Minimum cluster size",
             value=model.min_cluster_size,
             min_value=5,
             max_value=100
             )
-    min_samples = clustering.slider(
+    min_samples = clustering.number_input(
             "The number of samples in a neighbourhood for a \
 point to be considered a core point",
             value=model.min_samples,
             min_value=5,
             max_value=100
             )
-    selection_epsilon = clustering.slider(
+    selection_epsilon = clustering.number_input(
             "A distance threshold. Clusters below this value will be merged",
             value=model.cluster_selection_epsilon,
             min_value=0.0,
@@ -301,11 +301,8 @@ point to be considered a core point",
             step=0.01
     )
 
-    soft_clustering = clustering.checkbox("Soft clustering", value=False)
-
     return (model, min_cluster_size,
-            min_samples, selection_epsilon,
-            soft_clustering
+            min_samples, selection_epsilon
             )
 
 
@@ -323,7 +320,6 @@ def update_model_steps(
         n_components,
         densmap,
         min_cluster_size,
-        soft_clustering,
         min_samples,
         selection_epsilon
         ):
@@ -370,10 +366,6 @@ def update_model_steps(
 
     if model.min_cluster_size != min_cluster_size:
         model.min_cluster_size = min_cluster_size
-        update_step = min(3, update_step)
-
-    if model.soft_clustering != soft_clustering:
-        model.soft_clustering = soft_clustering
         update_step = min(3, update_step)
 
     if model.min_samples != min_samples:
