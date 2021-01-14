@@ -75,14 +75,14 @@ def load_model(paragraphs, doc_embed):
         )
     with st.spinner(
             "Performing word embedding, dimensionality \
-reduction and clustering (step 1 to 3). \
+reduction, and clustering (step 1 to 3). \
 This will take approximately 1 minute."
     ):
         model.perform_steps()
     return model
 
 
-@st.cache(allow_output_mutation=True, show_spinner=True)
+@st.cache(allow_output_mutation=True, show_spinner=False)
 def make_figure(df, x):
     """
     make figure for topic loading for words
@@ -505,7 +505,6 @@ small paragraphs (max 125 words).",
         )
         fig = make_figure(scores, x="Topic")
         expander_keyword_topics.plotly_chart(fig, use_container_width=True)
-
 
 
 def show_similarity_matrix(model, topic_reduction=False):
