@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction import text
+import re
 from textblob import TextBlob
 from sklearn.preprocessing import normalize
 from tqdm import tqdm
@@ -210,6 +211,14 @@ class TopicIdentify:
         """
         """
 
+        all_stopw = text.ENGLISH_STOP_WORDS.union(self.add_stops_words)
+        print(all_stopw)
+        all_stopw = [i.lower() for i in all_stopw]
+        pattern = re.compile(r'\b(' + r'|'.join(all_stopw) + r')\b\s*')
+        cleaned_docs = []
+        for paragraph in self.documents:
+            cleaned_docs.append(pattern.sub('', paragraph.lower()))
+
         if self.lemmatize:
             vectorizer = CountVectorizer(
                 tokenizer=textblob_tokenizer,
@@ -217,8 +226,7 @@ class TopicIdentify:
                 lowercase=True,
                 min_df=self.min_df,
                 max_df=self.max_df,
-                ngram_range=self.ngram_range,
-                stop_words=text.ENGLISH_STOP_WORDS.union(self.add_stops_words)
+                ngram_range=self.ngram_range
             )
         else:
             vectorizer = CountVectorizer(
@@ -226,11 +234,10 @@ class TopicIdentify:
                 lowercase=True,
                 min_df=self.min_df,
                 max_df=self.max_df,
-                ngram_range=self.ngram_range,
-                stop_words=text.ENGLISH_STOP_WORDS.union(self.add_stops_words)
+                ngram_range=self.ngram_range
             )
 
-        _ = vectorizer.fit_transform(self.documents)
+        _ = vectorizer.fit_transform(cleaned_docs)
         self.vocab = vectorizer.get_feature_names()
 
         # embed words
