@@ -12,6 +12,7 @@ import plotly.express as px
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
+from umap.parametric_umap import ParametricUMAP
 
 # TODO:
 # 1) Check if hard and soft clustering works: CHECK
@@ -24,9 +25,11 @@ from sklearn.metrics.pairwise import cosine_similarity
 # 8) Most similar topics for a word
 # 9) Most similar documents for a topic: CHECK
 # 10) Topic over time
-# 11) Add more tuning parameters to play with
-# 12) Add other dataset
-# 13) Implement in streamlit
+# 11) Add more tuning parameters to play with: CHECK
+# 12) Add other dataset: CHECK
+# 13) Implement in streamlit: CHECK
+# 14) FIX method create_document_vectors
+# 15) Add logging info
 
 
 def textblob_tokenizer(str_input):
@@ -45,10 +48,13 @@ class TopicIdentify:
                 n_neighbors=15,
                 n_components=5,
                 metric_umap='cosine',
+                densmap=False,
                 min_cluster_size=15,
                 metric_hdbscan='euclidean',
+                min_samples=5,
                 cluster_selection_method='eom',
                 soft_clustering=False,
+                cluster_selection_epsilon=0.0,
                 embedding_model="distiluse-base-multilingual-cased",
                 save_doc_embed=False,
                 path_doc_embed=None,
@@ -68,10 +74,13 @@ class TopicIdentify:
         self.n_neighbors = n_neighbors
         self.n_components = n_components
         self.metric_umap = metric_umap
+        self.densmap = densmap
         self.min_cluster_size = min_cluster_size
         self.metric_hdbscan = metric_hdbscan
         self.cluster_selection_method = cluster_selection_method
         self.soft_clustering = soft_clustering
+        self.cluster_selection_epsilon = cluster_selection_epsilon
+        self.min_samples = min_samples
         self.lemmatize = lemmatize
         self.add_stops_words = add_stops_words
         self.min_df = min_df
@@ -84,8 +93,9 @@ class TopicIdentify:
         self.random_state = random_state
         self.dim_reduction_fit = None
         self.clusterer = None
-        self.clusterer_probs = None
         self.clusterer_labels = None
+        self.clusterer_probs = None
+        self.clusterer_cprob = None
         self.topic_sizes = None
         self.topic_sizes_reduced = None
         self.topic_vectors = None
@@ -141,16 +151,19 @@ class TopicIdentify:
     def dim_reduction(self):
         """
         """
+
         umap_model = umap.UMAP(
             n_neighbors=self.n_neighbors,
             n_components=self.n_components,
             metric=self.metric_umap,
+            densmap=self.densmap,
             random_state=self.random_state).fit(self.doc_embedding)
         self.dim_reduction_fit = umap_model
 
     def clustering(self):
         """
         """
+        self.random_state
         clusterer = hdbscan.HDBSCAN(
             min_cluster_size=self.min_cluster_size,
             metric=self.metric_hdbscan,
@@ -158,12 +171,15 @@ class TopicIdentify:
             prediction_data=True).fit(self.dim_reduction_fit.embedding_)
         self.clusterer = clusterer
         self.clusterer_labels = clusterer.labels_
+        self.clusterer_cprob = clusterer.probabilities_
+
         if self.soft_clustering:
             self.clusterer_probs = (
                 hdbscan.all_points_membership_vectors(clusterer) /
                 (hdbscan.all_points_membership_vectors(clusterer).sum(axis=1).
                     reshape(clusterer.labels_.shape[0], 1))
                 )
+
         if self.soft_clustering:
             self.topic_sizes = (
                     pd.Series(
@@ -195,6 +211,7 @@ class TopicIdentify:
     def create_words_vectors(self):
         """
         """
+
         if self.lemmatize:
             vectorizer = CountVectorizer(
                 tokenizer=textblob_tokenizer,
@@ -212,12 +229,12 @@ class TopicIdentify:
                 min_df=self.min_df,
                 max_df=self.max_df,
                 ngram_range=self.ngram_range,
-                stop_words=text.ENGLISH_STOP_WORDS.union(
-                    self.add_stops_words)
+                stop_words=text.ENGLISH_STOP_WORDS.union(self.add_stops_words)
             )
 
         _ = vectorizer.fit_transform(self.documents)
         self.vocab = vectorizer.get_feature_names()
+
         # embed words
         if self.embedder is None:
             self.load_sentence_model()
@@ -228,6 +245,7 @@ class TopicIdentify:
 
     def create_document_vectors(self):
         """
+        TODO FIX: does not work properly
         """
         if self.embedder is None:
             self.load_sentence_model()
@@ -321,6 +339,7 @@ class TopicIdentify:
                         v2.reshape(1, topic_vectors.shape[1]))[0][0]
                 )
             topic_n_id[i1] = topic_n_cs
+
         df = pd.DataFrame(topic_n_id).round(2)
         fig = px.imshow(
             df.values,
@@ -366,8 +385,8 @@ class TopicIdentify:
         """
 
         # skip the noise topic
-        top_vecs = self.topic_vectors[1:self.topic_vectors.shape[0]]
-        top_sizes = self.topic_sizes[1:].values.tolist()
+        top_vecs = self.topic_vectors
+        top_sizes = self.topic_sizes.values.tolist()
         num_topics_current = len(top_sizes)
         hierarchy = [[i] for i in range(0, num_topics_current)]
         while num_topics_current > num_topics:
@@ -414,13 +433,13 @@ class TopicIdentify:
 
         self.topic_vectors_reduced = top_vecs
         self.topic_sizes_reduced = top_sizes
-        self.topic_hierarchy = hierarchy
+        self.topic_hierarchy = [str(i) for i in hierarchy]
 
         self.topic_words_reduced, self.topic_word_scores_reduced = (
              self.find_topic_words_and_scores(top_vecs, self.word_vectors)
         )
 
-    def search_topic_by_documents(self, topic_nr=2, n=5, reduced=False):
+    def search_topic_by_documents(self, topic_nr=1, n=5, reduced=False):
         """
         """
         if reduced:
@@ -446,6 +465,7 @@ class TopicIdentify:
     def generate_topic_wordcloud(
             self,
             topic_num,
+            title,
             background_color="white",
             reduced=False):
         """
@@ -494,5 +514,5 @@ class TopicIdentify:
                 height=400,
                 background_color=background_color,
                 random_state=69).generate_from_frequencies(word_score_dict))
-        plt.title("Topic " + str(topic_num),
+        plt.title("Topic " + str(title),
                   loc='left', fontsize=20, pad=20)
