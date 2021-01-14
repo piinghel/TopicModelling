@@ -6,6 +6,7 @@ import plotly.express as px
 from modules import topic_identify
 import base64
 from io import BytesIO
+from sentence_transformers import SentenceTransformer
 st.set_option('deprecation.showPyplotGlobalUse', False)
 
 
@@ -28,6 +29,16 @@ def get_table_download_link(df):
     val = to_excel(df)
     b64 = base64.b64encode(val)  # val looks like b'...'
     return f'<a href="data:application/octet-stream;base64,{b64.decode()}" download="topics_word_scores.xlsx">Download csv file</a>' # decode b'abc' => abc
+
+
+@st.cache(allow_output_mutation=True, show_spinner=False)
+def load_sentence_model(model_name="distiluse-base-multilingual-cased"):
+    """
+    """
+    with st.spinner(f"loading {model_name}"):
+        model = SentenceTransformer(model_name)
+
+    return model
 
 
 def construct_topics_df(model, reduced=False):
@@ -63,15 +74,15 @@ def construct_topics_df(model, reduced=False):
 
 
 @st.cache(allow_output_mutation=True, show_spinner=False)
-def load_model(paragraphs, doc_embed):
+def load_model(paragraphs, sentence_model, doc_embedding):
     """
     load  model
     """
     with st.spinner('Loading model'):
         model = topic_identify.TopicIdentify(
             documents=paragraphs,
-            doc_embedding=doc_embed,
-            embedding_model='distiluse-base-multilingual-cased',
+            embedding_model=sentence_model,
+            doc_embedding=doc_embedding
         )
     with st.spinner(
             "Performing word embedding, dimensionality \
@@ -457,22 +468,24 @@ def topic_keywords(model, text, topic_reduction=False):
     """
     computes most similar topics for a given set of keywords
     """
+
     expander_keyword_topics = st.beta_expander(
         "Show keyword/sentence topic loadings"
     )
-    keywords_input = expander_keyword_topics.text_area(
-        label="Input keywords for topic search (no comma required) or \
-small paragraphs (max 125 words).",
-        value=text
-    )
-    keyword_embed = model.embedder.encode([keywords_input])
+
     topic_red_sec_kw = False
     if model.topic_words_reduced is not None:
         if topic_reduction:
             topic_red_sec_kw = (
                 expander_keyword_topics.checkbox("On reduced topics")
             )
-
+    keywords_input = expander_keyword_topics.text_area(
+        label="Input keywords for topic search (no comma required) or \
+small paragraphs (max 125 words).",
+        value=text
+    )
+    keyword_embed = model.embedding_model.encode(keywords_input)
+    keyword_embed = keyword_embed.reshape(1, len(keyword_embed))
     if topic_red_sec_kw:
         sims_vector = cosine_similarity(
             keyword_embed, model.topic_vectors_reduced
@@ -536,7 +549,7 @@ def most_relevant_doc_top(df, model, topic_reduction):
         if model.topic_words_reduced is not None:
             if topic_reduction:
                 topic_reduction_doc = expander_documents.checkbox(
-                    "Apply Topic reduction", value=False
+                    "Apply topic reduction", value=False
                 )
         topic_df = construct_topics_df(model, topic_reduction_doc)
         topic_num = (

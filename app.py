@@ -17,15 +17,19 @@ def main():
         ("REIT-Industrial", "Newsgroup20 Subset")
      )
     # loads data and embeddings
+    sentence_model = helper.load_sentence_model(
+        model_name="distiluse-base-multilingual-cased"
+    )
     df, doc_embed, example_text = helper.load_data(dataset)
     paragraphs = df.paragraph.values.tolist()
-    if dataset == "REIT-Industrial":
+    if dataset == "Newsgroup20 Subset":
         st.sidebar.markdown("For more information about the newsgroup20 dataset, \
 see [here](https://scikit-learn.org/0.19/datasets/twenty_newsgroups.html).")
     # loads model
     model = helper.load_model(
             paragraphs=paragraphs,
-            doc_embed=doc_embed,
+            sentence_model=sentence_model,
+            doc_embedding=doc_embed
         )
     # add company names as stop words
     if dataset == "REIT-Industrial":

@@ -6,13 +6,12 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction import text
 from textblob import TextBlob
 from sklearn.preprocessing import normalize
-from sentence_transformers import SentenceTransformer
 from tqdm import tqdm
 import plotly.express as px
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
-from umap.parametric_umap import ParametricUMAP
+
 
 # TODO:
 # 1) Check if hard and soft clustering works: CHECK
@@ -44,6 +43,7 @@ class TopicIdentify:
     def __init__(
                 self,
                 documents,
+                embedding_model,
                 doc_embedding=None,
                 n_neighbors=15,
                 n_components=5,
@@ -55,7 +55,6 @@ class TopicIdentify:
                 cluster_selection_method='eom',
                 soft_clustering=False,
                 cluster_selection_epsilon=0.0,
-                embedding_model="distiluse-base-multilingual-cased",
                 save_doc_embed=False,
                 path_doc_embed=None,
                 lemmatize=False,
@@ -71,6 +70,7 @@ class TopicIdentify:
             self.doc_embedding = self._l2_normalize(doc_embedding)
         else:
             self.doc_embedding = None
+        self.embedding_model = embedding_model
         self.n_neighbors = n_neighbors
         self.n_components = n_components
         self.metric_umap = metric_umap
@@ -86,7 +86,6 @@ class TopicIdentify:
         self.min_df = min_df
         self.max_df = max_df
         self.ngram_range = ngram_range
-        self.embedding_model = embedding_model
         self.save_doc_embed = save_doc_embed
         self.path_doc_embed = path_doc_embed
         self.dataset_name = dataset_name
@@ -103,7 +102,6 @@ class TopicIdentify:
         self.vocab = None
         self.word_vectors = None
         self.word_indexes = None
-        self.embedder = None
         self.topic_words = None
         self.topic_words_reduced = None
         self.topic_word_scores = None
@@ -236,19 +234,16 @@ class TopicIdentify:
         self.vocab = vectorizer.get_feature_names()
 
         # embed words
-        if self.embedder is None:
-            self.load_sentence_model()
         self.word_indexes = dict(zip(self.vocab, range(len(self.vocab))))
         self.word_vectors = (
-            self._l2_normalize(np.array(self.embedder.encode(self.vocab)))
+            self._l2_normalize(np.array(
+                self.embedding_model.encode(self.vocab)))
             )
 
     def create_document_vectors(self):
         """
         TODO FIX: does not work properly
         """
-        if self.embedder is None:
-            self.load_sentence_model()
 
         batch_size = 500
         document_vectors = []
@@ -259,7 +254,7 @@ class TopicIdentify:
 
         for ind in range(0, batches):
             document_vectors.append(
-                self.embedder.encode(
+                self.embedding_model.encode(
                     self.documents[current:current + batch_size])
                 )
             pbar.update(1)
@@ -267,8 +262,8 @@ class TopicIdentify:
 
         if extra > 0:
             document_vectors.append(
-                self.embedder.encode(
-                    self.documentstrain_corpus[current:current + extra])
+                self.embedding_model.encode(
+                    self.document[current:current + extra])
             )
         pbar.update(1)
         pbar.close()
@@ -279,11 +274,6 @@ class TopicIdentify:
             np.save(self.path_doc_embed, document_vectors)
 
         self.doc_embedding = document_vectors
-
-    def load_sentence_model(self):
-        """
-        """
-        self.embedder = SentenceTransformer(self.embedding_model)
 
     @staticmethod
     def _l2_normalize(vectors):
@@ -455,7 +445,9 @@ class TopicIdentify:
     def documents_by_keywords(self, keywords, n=5):
         """
         """
-        key_word_embed = self._l2_normalize(self.embedder.encode(keywords))
+        key_word_embed = self._l2_normalize(
+            self.embedding_model.encode(keywords)
+        )
         res = np.inner(key_word_embed, self.doc_embedding)
         most_similar_idx = np.flip(np.argsort(res))
         return (most_similar_idx[0:n],
