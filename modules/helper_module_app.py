@@ -84,12 +84,6 @@ def load_model(paragraphs, sentence_model, doc_embedding):
             embedding_model=sentence_model,
             doc_embedding=doc_embedding
         )
-    with st.spinner(
-            "Performing word embedding, dimensionality \
-reduction, and clustering (step 1 to 3). \
-This will take approximately 1 minute."
-    ):
-        model.perform_steps()
     return model
 
 

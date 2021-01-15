@@ -25,6 +25,8 @@ def main():
     if dataset == "Newsgroup20 Subset":
         st.sidebar.markdown("For more information about the newsgroup20 dataset, \
 see [here](https://scikit-learn.org/0.19/datasets/twenty_newsgroups.html).")
+
+
     # loads model
     model = helper.load_model(
             paragraphs=paragraphs,
@@ -33,7 +35,9 @@ see [here](https://scikit-learn.org/0.19/datasets/twenty_newsgroups.html).")
         )
     # add company names as stop words
     if dataset == "REIT-Industrial":
-        model.add_stops_words = list(set(df.company.values.tolist()))
+        model.add_stops_words = list(df.company.unique())
+    model.dataset_name = dataset
+
 
     st.sidebar.markdown("The paragraphs and word embeddings were obtained using \
 distiluse-base-multilingual-cased from the sentence transfromer library. \
@@ -52,9 +56,17 @@ For more information see [here](https://www.sbert.net/).")
      min_samples, selection_epsilon) = (
         helper.params_clustering(model)
     )
-    st.sidebar.markdown("Do not forget to hit the buttom **Update model configurations** \
+    st.sidebar.markdown("Hit the **initialiation checkbox**, \
+once the model has been intialialized. This will save time.")
+    skip_initial = st.sidebar.checkbox("Skip initializating", value=False)
+    if not skip_initial:
+        with st.spinner("Initializing model"):
+            model.perform_steps()
+    st.sidebar.markdown("Do not forget to hit the button **update model configurations** \
 when changing the parameter values. \
 The updating should take no longer than 3 minutes.")
+
+
     if st.sidebar.button("Update model configurations"):
         model = helper.update_model_steps(
                     model=model,

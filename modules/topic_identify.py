@@ -63,7 +63,7 @@ class TopicIdentify:
                 min_df=0.005,
                 max_df=0.2,
                 ngram_range=(1, 3),
-                dataset_name="REIT-Industrial",
+                dataset_name=None,
                 random_state=69):
 
         self.documents = documents
@@ -212,7 +212,6 @@ class TopicIdentify:
         """
 
         all_stopw = text.ENGLISH_STOP_WORDS.union(self.add_stops_words)
-        print(all_stopw)
         all_stopw = [i.lower() for i in all_stopw]
         pattern = re.compile(r'\b(' + r'|'.join(all_stopw) + r')\b\s*')
         cleaned_docs = []
@@ -357,23 +356,19 @@ class TopicIdentify:
     def topic_reduction(self, num_topics):
         """
         Reduce the number of topics discovered by Top2Vec.
-
         The most representative topics of the corpus will be found, by
         iteratively merging each smallest topic to the most similar topic until
         num_topics is reached.
-
         Parameters
         ----------
         num_topics: int
             The number of topics to reduce to.
-
         Returns
         -------
         hierarchy: list of ints
             Each index of hierarchy corresponds to the reduced topics, for each
             reduced topic the indexes of the original topics that were merged
             to create it are listed.
-
             Example:
             [[3]  <Reduced Topic 0> contains original Topic 3
             [2,4] <Reduced Topic 1> contains original Topics 2 and 4
@@ -469,31 +464,25 @@ class TopicIdentify:
             reduced=False):
         """
         Create a word cloud for a topic.
-
         A word cloud will be generated and displayed. The most semantically
         similar words to the topic will have the largest size, less similar
         words will be smaller. The size is determined using the cosine distance
         of the word vectors from the topic vector.
-
         Parameters
         ----------
         topic_num: int
             The topic number to search.
-
         background_color : str (Optional, default='white')
             Background color for the word cloud image. Suggested options are:
                 * white
                 * black
-
         reduced: bool (Optional, default False)
             Original topics are used by default. If True the
             reduced topics will be used.
-
         Returns
         -------
         A matplotlib plot of the word cloud with the topic number will be
         displayed.
-
         """
 
         if reduced:
