@@ -10,5 +10,5 @@ To run the app locally:
  3) run `pip install -r requirments.txt`
  4) run `streamlit run app.py`
 
- **Possible issues:** in case you have trouble with installing the ***hnswlib** library, 
+ **Possible issues:** in case you have trouble with installing the **hnswlib** library, 
  try to install it via `conda install -c conda-forge hnswlib`
