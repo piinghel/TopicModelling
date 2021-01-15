@@ -300,7 +300,6 @@ point to be considered a core point",
 
 def update_model_steps(
         model,
-        dataset,
         doc_embed,
         paragraphs,
         lower_ngrams,
@@ -317,12 +316,6 @@ def update_model_steps(
         ):
 
     update_step = 4
-
-    if dataset != model.dataset_name:
-        model.dataset_name = dataset
-        model.documents = paragraphs
-        model.doc_embedding = doc_embed
-        update_step = min(1, update_step)
 
     if model.ngram_range != (lower_ngrams, upper_ngrams):
         model.ngram_range = (lower_ngrams, upper_ngrams)
@@ -392,7 +385,8 @@ def display_topics(model, topic_reduction):
                             max_value=len(model.topic_sizes)
                             )
             if st.sidebar.button("Update number of topics"):
-                model.topic_reduction(num_topics=nr_topics_red)
+                with st.spinner("updating number op topics!"):
+                    model.topic_reduction(num_topics=nr_topics_red)
 
     expander_topics = st.beta_expander("Show topics")
     topic_red_sec_tw = False

@@ -1,3 +1,4 @@
+import graphviz as graphviz
 import streamlit as st
 from modules import helper_module_app as helper
 st.set_option('deprecation.showPyplotGlobalUse', False)
@@ -11,6 +12,20 @@ def main():
 
     st.sidebar.title("Model configurations")
     st.title("Topic discovering")
+    st.write("")
+
+    graph = graphviz.Digraph()
+    graph.edge('Input model embeddings', 'Dimension reduction (Step 2)')
+    graph.edge('Input documents', 'Extract keywords \
+and perform word embeddings (Step 1)')
+    graph.edge('Dimension reduction (Step 2)', 'Clustering (Step 3)')
+    graph.edge('Clustering (Step 3)', 'Construct topic vectors (Step 4)')
+    graph.edge('Construct topic vectors (Step 4)', 'Attach keywords \
+(ngrams) to each topic vectors')
+    graph.edge('Extract keywords and perform word embeddings (Step 1)', 'Attach keywords \
+(ngrams) to each topic vectors')
+    st.graphviz_chart(graph)
+
     # choose dataset
     dataset = st.sidebar.selectbox(
         "Choose dataset",
@@ -27,17 +42,24 @@ see [here](https://scikit-learn.org/0.19/datasets/twenty_newsgroups.html).")
     model = helper.load_model()
 
     if model.dataset_name != dataset:
-        model.dataset_name = dataset
         with st.spinner("Change of dataset: updating step 1 to 3"):
+            # update and reset arguments
             model.doc_embedding = doc_embed
             model.documents = paragraphs
+            model.dataset_name = dataset
+            model.topic_sizes_reduced = None
+            model.topic_vectors_reduced = None
+            model.topic_words_reduced = None
+            model.topic_word_scores_reduced = None
+            model.topic_hierarchy = None
             model.perform_steps()
+
+
     # add company names as stop words
     if dataset == "REIT-Industrial":
         model.add_stops_words = list(df.company.unique())
     else:
         model.add_stops_words = []
-    model.dataset_name = dataset
 
     st.sidebar.markdown("The paragraphs and word embeddings were obtained using \
 distiluse-base-multilingual-cased from the sentence transfromer library. \
@@ -64,7 +86,6 @@ The updating should take no longer than 3 minutes.")
     if st.sidebar.button("Update model configurations"):
         model = helper.update_model_steps(
                     model=model,
-                    dataset=dataset,
                     doc_embed=doc_embed,
                     paragraphs=paragraphs,
                     lower_ngrams=lower_ngrams,
@@ -79,6 +100,7 @@ The updating should take no longer than 3 minutes.")
                     min_samples=min_samples,
                     selection_epsilon=selection_epsilon
                 )
+
 
     # apply topic reduction?
     topic_reduction = st.sidebar.checkbox("Topic reduction", value=False)
