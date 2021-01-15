@@ -1,6 +1,6 @@
 # Topic Discovering
 
-Link streamlit [sharing](https://share.streamlit.io/piinghel/topicmodelling/main/app.py)
+Link streamlit [sharing](https://share.streamlit.io/piinghel/topicmodelling/main/app.py).
 The link might not always work due to memory issues.
 
 To run the app locally:
