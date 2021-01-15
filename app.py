@@ -21,9 +21,9 @@ and perform word embeddings (Step 1)')
     graph.edge('Dimension reduction (Step 2)', 'Clustering (Step 3)')
     graph.edge('Clustering (Step 3)', 'Construct topic vectors')
     graph.edge('Construct topic vectors', 'Attach keywords \
-(ngrams) to each topic vectors')
+(ngrams) to each topic vector')
     graph.edge('Extract keywords and perform word embeddings (Step 1)', 'Attach keywords \
-(ngrams) to each topic vectors')
+(ngrams) to each topic vector')
     st.graphviz_chart(graph)
 
     # choose dataset
