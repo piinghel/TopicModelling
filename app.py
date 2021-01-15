@@ -14,30 +14,30 @@ def main():
     # choose dataset
     dataset = st.sidebar.selectbox(
         "Choose dataset",
-        (["REIT-Industrial"])
+        (["REIT-Industrial", "Newsgroup20 Subset"])
      )
-    # loads data and embeddings
-    sentence_model = helper.load_sentence_model(
-        model_name="distiluse-base-multilingual-cased"
-    )
+
     df, doc_embed, example_text = helper.load_data(dataset)
     paragraphs = df.paragraph.values.tolist()
     if dataset == "Newsgroup20 Subset":
         st.sidebar.markdown("For more information about the newsgroup20 dataset, \
 see [here](https://scikit-learn.org/0.19/datasets/twenty_newsgroups.html).")
 
-
     # loads model
-    model = helper.load_model(
-            paragraphs=paragraphs,
-            sentence_model=sentence_model,
-            doc_embedding=doc_embed
-        )
+    model = helper.load_model()
+
+    if model.dataset_name != dataset:
+        model.dataset_name = dataset
+        with st.spinner("Change of dataset: updating step 1 to 3"):
+            model.doc_embedding = doc_embed
+            model.documents = paragraphs
+            model.perform_steps()
     # add company names as stop words
     if dataset == "REIT-Industrial":
         model.add_stops_words = list(df.company.unique())
+    else:
+        model.add_stops_words = []
     model.dataset_name = dataset
-
 
     st.sidebar.markdown("The paragraphs and word embeddings were obtained using \
 distiluse-base-multilingual-cased from the sentence transfromer library. \
@@ -56,17 +56,9 @@ For more information see [here](https://www.sbert.net/).")
      min_samples, selection_epsilon) = (
         helper.params_clustering(model)
     )
-    st.sidebar.markdown("Hit the **initialiation checkbox**, \
-once the model has been intialialized. This will skip the initailization \
-part each time you change parameter values.")
-    skip_initial = st.sidebar.checkbox("Skip initializating", value=False)
-    if not skip_initial:
-        with st.spinner("Initializing model. \
-Hit the intialization checkbox once the model has been intitialized. \
-This will save time."):
-            model.perform_steps()
-    st.sidebar.markdown("Do not forget to hit the button **update model configurations** \
-when changing the parameter values. \
+
+    st.sidebar.markdown("Do not forget to hit the **update model configurations** \
+button when changing the parameter values. \
 The updating should take no longer than 3 minutes.")
 
     if st.sidebar.button("Update model configurations"):

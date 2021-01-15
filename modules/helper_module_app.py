@@ -28,17 +28,8 @@ def get_table_download_link(df):
     """
     val = to_excel(df)
     b64 = base64.b64encode(val)  # val looks like b'...'
-    return f'<a href="data:application/octet-stream;base64,{b64.decode()}" download="topics_word_scores.xlsx">Download csv file</a>' # decode b'abc' => abc
-
-
-@st.cache(allow_output_mutation=True, show_spinner=False)
-def load_sentence_model(model_name="distiluse-base-multilingual-cased"):
-    """
-    """
-    with st.spinner(f"loading {model_name}"):
-        model = SentenceTransformer(model_name)
-
-    return model
+    return f'<a href="data:application/octet-stream;base64,\
+{b64.decode()}" download="topics_word_scores.xlsx">Download csv file</a>'
 
 
 def construct_topics_df(model, reduced=False):
@@ -73,21 +64,45 @@ def construct_topics_df(model, reduced=False):
     return df_topics[cols]
 
 
+def construct_df_topic_words_scores(topic_words, word_scores, digits=2):
+    """
+    construct topics words with scores
+    """
+    topics_scores_df = {}
+    for i, array in enumerate(word_scores.tolist()):
+        store_l = []
+        for j, el in enumerate(array):
+            store_l.append((topic_words[i, j],
+                            (float(str(word_scores[i, j])[0:5]))))
+        topics_scores_df[i] = store_l
+    return pd.DataFrame(topics_scores_df).T
+
+
 @st.cache(allow_output_mutation=True, show_spinner=False)
-def load_model(paragraphs, sentence_model, doc_embedding):
+def load_model():
     """
     load  model
     """
-    with st.spinner('Loading model'):
-        model = topic_identify.TopicIdentify(
+    model_name = "distiluse-base-multilingual-cased"
+    df, doc_embed, example_text = load_data("REIT-Industrial")
+    paragraphs = df.paragraph.values.tolist()
+
+    with st.spinner(f'Loading model {model_name}'):
+        sentence_model = SentenceTransformer(model_name)
+    model = topic_identify.TopicIdentify(
             documents=paragraphs,
             embedding_model=sentence_model,
-            doc_embedding=doc_embedding
+            doc_embedding=doc_embed
         )
+    model.dataset_name = "REIT-Industrial"
+    with st.spinner("initialization: performing \
+word embedding (step 1),  dimensionality reduction (step 2), \
+and clustering (step 3)"):
+        model.perform_steps()
     return model
 
 
-@st.cache(allow_output_mutation=True, show_spinner=False)
+@st.cache(ttl=60*5, show_spinner=False, allow_output_mutation=True)
 def make_figure(df, x):
     """
     make figure for topic loading for words
@@ -171,21 +186,6 @@ liefdadigheidsdoel oder Wohltätigkeitsarbeit"
     return df, doc_embed, example_text
 
 
-@st.cache(allow_output_mutation=True, show_spinner=True)
-def construct_df_topic_words_scores(topic_words, word_scores, digits=2):
-    """
-    construct topics words with scores
-    """
-    topics_scores_df = {}
-    for i, array in enumerate(word_scores.tolist()):
-        store_l = []
-        for j, el in enumerate(array):
-            store_l.append((topic_words[i, j],
-                            (float(str(word_scores[i, j])[0:5]))))
-        topics_scores_df[i] = store_l
-    return pd.DataFrame(topics_scores_df).T
-
-
 def params_word_embed(model):
     """
     parameters word embeddings
@@ -202,26 +202,26 @@ sklearn.feature_extraction.text.CountVectorizer.html).")
                 "Input stopwords (separate by comma)",
                 value=','.join([str(elem) for elem in model.add_stops_words])
             )
-    lower_ngrams = word_embed_p.number_input(
+    lower_ngrams = word_embed_p.slider(
                 "Lower bound ngrams",
                 value=model.ngram_range[0],
                 min_value=1,
                 max_value=5
                 )
-    upper_ngrams = word_embed_p.number_input(
+    upper_ngrams = word_embed_p.slider(
                 "Upper bound ngrams",
                 value=model.ngram_range[1],
                 min_value=1,
                 max_value=5
         )
-    min_df = word_embed_p.number_input(
+    min_df = word_embed_p.slider(
                 "Minimum document frequency (%)",
                 value=model.min_df,
                 min_value=0.0,
                 max_value=0.2,
                 step=0.005
                 )
-    max_df = word_embed_p.number_input(
+    max_df = word_embed_p.slider(
                 "Maximum document frequency (%)",
                 value=model.max_df,
                 min_value=0.05,
@@ -287,7 +287,7 @@ point to be considered a core point",
             min_value=5,
             max_value=100
             )
-    selection_epsilon = clustering.number_input(
+    selection_epsilon = clustering.slider(
             "A distance threshold. Clusters below this value will be merged",
             value=model.cluster_selection_epsilon,
             min_value=0.0,
@@ -450,6 +450,17 @@ def display_word_cloud(model, expander_topics, reduced):
         c2_doc.pyplot(fig2)
 
 
+@st.cache(show_spinner=False, allow_output_mutation=True)
+def embed_keywords(keywords):
+    """
+    embeds keywords or a paragraph
+    """
+    model = load_model()
+    return model._l2_normalize(
+            model.embedding_model.encode(keywords)
+    )
+
+
 def topic_keywords(model, text, topic_reduction=False):
     """
     computes most similar topics for a given set of keywords
@@ -470,7 +481,7 @@ def topic_keywords(model, text, topic_reduction=False):
 small paragraphs (max 125 words).",
         value=text
     )
-    keyword_embed = model.embedding_model.encode(keywords_input)
+    keyword_embed = embed_keywords(keywords_input)
     keyword_embed = keyword_embed.reshape(1, len(keyword_embed))
     if topic_red_sec_kw:
         sims_vector = cosine_similarity(
@@ -620,11 +631,11 @@ small paragraphs (max 125 words).",
             max_value=10
         )
 
-    idx, scores = (
-        model.documents_by_keywords(
-            keywords=keywords_doc, n=num_docs
-        )
-    )
+    key_word_embed = embed_keywords(keywords_doc)
+    res = np.inner(key_word_embed, model.doc_embedding)
+    most_similar_idx = np.flip(np.argsort(res))
+    idx = most_similar_idx[0:num_docs]
+    scores = np.take(res, most_similar_idx)[0:num_docs]
     for score, id in zip(scores, idx):
         expander_keywords_docs.write(f"Document: {id}, \
 Score: {str(score)[0:5]}")

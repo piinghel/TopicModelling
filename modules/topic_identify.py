@@ -12,6 +12,7 @@ import plotly.express as px
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
+import streamlit as st
 
 
 # TODO:
@@ -132,16 +133,13 @@ class TopicIdentify:
             self.create_words_vectors()
             self.dim_reduction()
             self.clustering()
-
         elif step == 2:
             self.dim_reduction()
             self.clustering()
-
         elif step == 3:
             self.clustering()
 
         self.create_topic_vectors()
-        self.create_words_vectors()
         self.topic_words, self.topic_word_scores = (
             self.find_topic_words_and_scores(
                 self.topic_vectors, self.word_vectors)
@@ -502,5 +500,4 @@ class TopicIdentify:
                 height=400,
                 background_color=background_color,
                 random_state=69).generate_from_frequencies(word_score_dict))
-        plt.title("Topic " + str(title),
-                  loc='left', fontsize=20, pad=20)
+        plt.title("Topic " + str(title), loc='left', fontsize=20, pad=20)
