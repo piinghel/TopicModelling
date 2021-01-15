@@ -62,7 +62,7 @@ part each time you change parameter values.")
     skip_initial = st.sidebar.checkbox("Skip initializating", value=False)
     if not skip_initial:
         with st.spinner("Initializing model. \
-Check the intializatin checkbox once the model has been intitialized. \
+Hit the intializatin checkbox once the model has been intitialized. \
 This will save time."):
             model.perform_steps()
     st.sidebar.markdown("Do not forget to hit the button **update model configurations** \
