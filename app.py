@@ -57,10 +57,13 @@ For more information see [here](https://www.sbert.net/).")
         helper.params_clustering(model)
     )
     st.sidebar.markdown("Hit the **initialiation checkbox**, \
-once the model has been intialialized. This will save time.")
+once the model has been intialialized. This will skip the initailization \
+part each time you change parameter values.")
     skip_initial = st.sidebar.checkbox("Skip initializating", value=False)
     if not skip_initial:
-        with st.spinner("Initializing model"):
+        with st.spinner("Initializing model. \
+Check the intializatin checkbox once the model has been intitialized. \
+This will save time."):
             model.perform_steps()
     st.sidebar.markdown("Do not forget to hit the button **update model configurations** \
 when changing the parameter values. \
