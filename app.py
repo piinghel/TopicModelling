@@ -15,7 +15,7 @@ def main():
     st.write("")
 
     graph = graphviz.Digraph()
-    graph.edge('Input model embeddings', 'Dimension reduction (Step 2)')
+    graph.edge('Input model embeddings from documents', 'Dimension reduction (Step 2)')
     graph.edge('Input documents', 'Extract keywords \
 and perform word embeddings (Step 1)')
     graph.edge('Dimension reduction (Step 2)', 'Clustering (Step 3)')
