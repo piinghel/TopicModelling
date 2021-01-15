@@ -19,8 +19,8 @@ def main():
     graph.edge('Input documents', 'Extract keywords \
 and perform word embeddings (Step 1)')
     graph.edge('Dimension reduction (Step 2)', 'Clustering (Step 3)')
-    graph.edge('Clustering (Step 3)', 'Construct topic vectors (Step 4)')
-    graph.edge('Construct topic vectors (Step 4)', 'Attach keywords \
+    graph.edge('Clustering (Step 3)', 'Construct topic vectors')
+    graph.edge('Construct topic vectors', 'Attach keywords \
 (ngrams) to each topic vectors')
     graph.edge('Extract keywords and perform word embeddings (Step 1)', 'Attach keywords \
 (ngrams) to each topic vectors')
