@@ -78,7 +78,7 @@ def construct_df_topic_words_scores(topic_words, word_scores, digits=2):
     return pd.DataFrame(topics_scores_df).T
 
 
-@st.cache(allow_output_mutation=True, show_spinner=False, max_entries=2)
+@st.cache(allow_output_mutation=True, show_spinner=False, max_entries=1)
 def load_model():
     """
     load  model
@@ -102,7 +102,6 @@ and clustering (step 3)"):
     return model
 
 
-@st.cache(ttl=60*5, show_spinner=False, allow_output_mutation=True, max_entries=2)
 def make_figure(df, x):
     """
     make figure for topic loading for words
@@ -164,7 +163,6 @@ def count_topics(df, model, var, value, nr_words, reduced):
     return fig
 
 
-@st.cache(allow_output_mutation=True, show_spinner=False, max_entries=2)
 def load_data(dataset):
     """
     loads paragraphs and document embeddings
@@ -450,7 +448,7 @@ def display_word_cloud(model, expander_topics, reduced):
         c2_doc.pyplot(fig2)
 
 
-@st.cache(show_spinner=False, allow_output_mutation=True, max_entries=2)
+@st.cache(show_spinner=False, allow_output_mutation=True, max_entries=1)
 def embed_keywords(keywords):
     """
     embeds keywords or a paragraph
