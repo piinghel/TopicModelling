@@ -1,6 +1,9 @@
 # Topic Discovering
 
-to run the app locally
+Link streamlit [sharing](https://share.streamlit.io/piinghel/topicmodelling/main/app.py)
+The link might not always work due to memory issues.
+
+To run the app locally:
  
  1) Download the repository
  2) Open your terminal (for example anaconda) and make sure your are in the folder where the requirment file and app.py are located
