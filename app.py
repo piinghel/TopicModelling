@@ -66,7 +66,6 @@ once the model has been intialialized. This will save time.")
 when changing the parameter values. \
 The updating should take no longer than 3 minutes.")
 
-
     if st.sidebar.button("Update model configurations"):
         model = helper.update_model_steps(
                     model=model,
@@ -89,8 +88,8 @@ The updating should take no longer than 3 minutes.")
     # apply topic reduction?
     topic_reduction = st.sidebar.checkbox("Topic reduction", value=False)
     if topic_reduction:
-        st.sidebar.markdown("Do not foret to hit the **Update number of topics** \
-buttom when changing the number of topics.")
+        st.sidebar.markdown("Do not foret to hit the **update number of topics** \
+button when changing the number of topics.")
 
     # Section 1: Table with topics
     expander_topics, reduced_topic_sec_tw,  = (
