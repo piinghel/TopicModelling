@@ -63,7 +63,7 @@ class TopicIdentify:
                 add_stops_words=[],
                 min_df=0.005,
                 max_df=0.2,
-                ngram_range=(1, 3),
+                ngram_range=(2, 3),
                 dataset_name=None,
                 random_state=69):
 
