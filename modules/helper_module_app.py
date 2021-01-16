@@ -213,19 +213,21 @@ there is no white space between comma's and stopwords!",
                 min_value=1,
                 max_value=5
         )
-    min_df = word_embed_p.slider(
-                "Minimum document frequency (%)",
+    min_df = word_embed_p.number_input(
+                "Minimum document frequency (between 0.0 and 0.20)",
                 value=model.min_df,
                 min_value=0.0,
                 max_value=0.2,
-                step=0.005
+                step=0.005,
+                format="%0.3f"
                 )
-    max_df = word_embed_p.slider(
-                "Maximum document frequency (%)",
+    max_df = word_embed_p.number_input(
+                "Maximum document frequency (between 0.05 and 1.0)",
                 value=model.max_df,
                 min_value=0.05,
                 max_value=1.0,
-                step=0.005
+                step=0.005,
+                format="%0.3f"
                 )
     #lemmatize = st.sidebar.checkbox("Lemmatize", value=False)
 

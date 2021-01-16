@@ -27,16 +27,15 @@ and perform word embeddings (Step 1)')
 (ngrams) to each topic vector')
     st.graphviz_chart(graph)
 
-    placeholder = st.empty()
-
     # choose dataset
     dataset = st.sidebar.selectbox(
         "Choose dataset",
         (["REIT-Industrial"])
      )
 
+
     df, doc_embed, example_text = helper.load_data(dataset)
-    original_data_expander = st.beta_expander("Show original data")
+    original_data_expander = st.beta_expander("Show raw data (source)")
 
     paragraphs = df.paragraph.values.tolist()
     if dataset == "Newsgroup20 Subset":
@@ -120,7 +119,8 @@ The updating should take no longer than 3 minutes.")
                     densmap=densmap,
                     min_cluster_size=min_cluster_size,
                     min_samples=min_samples,
-                    selection_epsilon=selection_epsilon
+                    selection_epsilon=selection_epsilon,
+                    place_holder=place_holder
                 )
 
     # apply topic reduction?
