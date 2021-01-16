@@ -1,5 +1,7 @@
 # Topic Discovering
 
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/piinghel/topicmodelling/main/app.py)
+
 Link streamlit [sharing](https://share.streamlit.io/piinghel/topicmodelling/main/app.py).
 The link might not always work due to memory issues.
 
