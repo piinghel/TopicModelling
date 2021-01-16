@@ -27,6 +27,8 @@ and perform word embeddings (Step 1)')
 (ngrams) to each topic vector')
     st.graphviz_chart(graph)
 
+    placeholder = st.empty()
+
     # choose dataset
     dataset = st.sidebar.selectbox(
         "Choose dataset",
@@ -35,24 +37,6 @@ and perform word embeddings (Step 1)')
 
     df, doc_embed, example_text = helper.load_data(dataset)
     original_data_expander = st.beta_expander("Show original data")
-
-    with original_data_expander.beta_container():
-        original_data_expander.markdown("Here you see the (sources) of the original \
-data.")
-
-        if dataset == "REIT-Industrial":
-            show_p = original_data_expander.checkbox(
-                "Show extracted paragraphs", value=False
-            )
-            if show_p:
-                original_data_expander.dataframe(df)
-            else:
-                original_data_expander.dataframe(
-                    df.iloc[:, 0:5].drop_duplicates().
-                    reset_index(inplace=False, drop=True)
-                )
-        else:
-            original_data_expander.dataframe(df.iloc[:, 1])
 
     paragraphs = df.paragraph.values.tolist()
     if dataset == "Newsgroup20 Subset":
@@ -85,6 +69,23 @@ see [here](https://scikit-learn.org/0.19/datasets/twenty_newsgroups.html).")
     st.sidebar.markdown("The paragraphs and word embeddings were obtained using \
 distiluse-base-multilingual-cased from the sentence transfromer library. \
 For more information see [here](https://www.sbert.net/).")
+
+    with original_data_expander.beta_container():
+        original_data_expander.markdown("Here you see the (sources) of the original \
+data.")
+        if dataset == "REIT-Industrial":
+            show_p = original_data_expander.checkbox(
+                "Show extracted paragraphs", value=False
+            )
+            if show_p:
+                original_data_expander.dataframe(df)
+            else:
+                original_data_expander.dataframe(
+                    df.iloc[:, 0:5].drop_duplicates().
+                    reset_index(inplace=False, drop=True)
+                )
+        else:
+            original_data_expander.dataframe(df.iloc[:, 1])
 
     # parameters word embeddings
     model, stop_words, lower_ngrams, upper_ngrams, min_df, max_df = (

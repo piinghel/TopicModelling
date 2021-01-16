@@ -330,7 +330,9 @@ def update_model_steps(
         model.max_df = max_df
         update_step = min(1, update_step)
 
-    model_stop_word_str = ','.join([str(elem) for elem in model.add_stops_words])
+    model_stop_word_str = ','.join(
+        [str(elem) for elem in model.add_stops_words]
+        )
     if model_stop_word_str != stop_words:
         model.add_stops_words = stop_words.split(",")
         update_step = min(1, update_step)
