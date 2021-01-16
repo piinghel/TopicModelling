@@ -15,7 +15,8 @@ def main():
     st.write("")
 
     graph = graphviz.Digraph()
-    graph.edge('Input model embeddings from documents', 'Dimension reduction (Step 2)')
+    graph.edge('Input model embeddings from documents',
+               'Dimension reduction (Step 2)')
     graph.edge('Input documents', 'Extract keywords \
 and perform word embeddings (Step 1)')
     graph.edge('Dimension reduction (Step 2)', 'Clustering (Step 3)')
@@ -29,7 +30,7 @@ and perform word embeddings (Step 1)')
     # choose dataset
     dataset = st.sidebar.selectbox(
         "Choose dataset",
-        (["REIT-Industrial"])
+        (["REIT-Industrial", "Newsgroup20 Subset"])
      )
 
     df, doc_embed, example_text = helper.load_data(dataset)
@@ -54,10 +55,10 @@ see [here](https://scikit-learn.org/0.19/datasets/twenty_newsgroups.html).")
             model.topic_hierarchy = None
             model.perform_steps()
 
-
     # add company names as stop words
     if dataset == "REIT-Industrial":
-        model.add_stops_words = list(df.company.unique())
+        add_stop_word = ["alexandrias", "alexandria"]
+        model.add_stops_words = list(df.company.unique()) + add_stop_word
     else:
         model.add_stops_words = []
 
@@ -100,7 +101,6 @@ The updating should take no longer than 3 minutes.")
                     min_samples=min_samples,
                     selection_epsilon=selection_epsilon
                 )
-
 
     # apply topic reduction?
     topic_reduction = st.sidebar.checkbox("Topic reduction", value=False)

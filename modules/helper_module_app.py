@@ -197,7 +197,8 @@ def params_word_embed(model):
 see [here](https://scikit-learn.org/stable/modules/generated/\
 sklearn.feature_extraction.text.CountVectorizer.html).")
     stop_words = word_embed_p.text_area(
-                "Input stopwords (separate by comma)",
+                "Input stopwords (separate by comma). Make sure \
+there is no white space between comma's and stopwords!",
                 value=','.join([str(elem) for elem in model.add_stops_words])
             )
     lower_ngrams = word_embed_p.slider(
@@ -331,7 +332,8 @@ def update_model_steps(
 
     model_stop_word_str = ','.join([str(elem) for elem in model.add_stops_words])
     if model_stop_word_str != stop_words:
-        model.add_stops_words = stop_words
+        model.add_stops_words = stop_words.split(",")
+        update_step = min(1, update_step)
 
     # if model.lemmatize != lemmatize:
     #     model.lemmatize = lemmatize
