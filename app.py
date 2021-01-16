@@ -34,6 +34,12 @@ and perform word embeddings (Step 1)')
      )
 
     df, doc_embed, example_text = helper.load_data(dataset)
+    original_data_expander = st.beta_expander("Show original data")
+    with original_data_expander.beta_container():
+        original_data_expander.markdown("Here you see the original \
+data including the url of the ESG report.")
+        original_data_expander.dataframe(df)
+
     paragraphs = df.paragraph.values.tolist()
     if dataset == "Newsgroup20 Subset":
         st.sidebar.markdown("For more information about the newsgroup20 dataset, \
