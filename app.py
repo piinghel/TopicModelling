@@ -30,7 +30,7 @@ and perform word embeddings (Step 1)')
     # choose dataset
     dataset = st.sidebar.selectbox(
         "Choose dataset",
-        (["REIT-Industrial", "Newsgroup20 Subset"])
+        (["REIT-Industrial"])
      )
 
     df, doc_embed, example_text = helper.load_data(dataset)
