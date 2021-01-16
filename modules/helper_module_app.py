@@ -401,7 +401,7 @@ def display_topics(model, topic_reduction):
     df_topics = construct_topics_df(model, topic_red_sec_tw)
     df_topics = df_topics.sort_values(by="size", ascending=False)
     df_topics.reset_index(inplace=True, drop=True)
-    expander_topics.markdown("This table shows the 10 most representive words for each topic \
+    expander_topics.markdown("This table represents the 10 most important words for each topic \
 along with the word scores, and topic sizes.")
     expander_topics.markdown("**Note:** topic 0 represents the noise topic!")
     expander_topics.dataframe(df_topics)
