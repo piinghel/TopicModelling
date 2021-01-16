@@ -33,7 +33,6 @@ and perform word embeddings (Step 1)')
         (["REIT-Industrial"])
      )
 
-
     df, doc_embed, example_text = helper.load_data(dataset)
     original_data_expander = st.beta_expander("Show raw data (source)")
 
@@ -119,8 +118,7 @@ The updating should take no longer than 3 minutes.")
                     densmap=densmap,
                     min_cluster_size=min_cluster_size,
                     min_samples=min_samples,
-                    selection_epsilon=selection_epsilon,
-                    place_holder=place_holder
+                    selection_epsilon=selection_epsilon
                 )
 
     # apply topic reduction?
