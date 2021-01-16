@@ -12,7 +12,6 @@ import plotly.express as px
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
-import streamlit as st
 
 
 # TODO:
@@ -56,7 +55,7 @@ class TopicIdentify:
                 min_samples=5,
                 cluster_selection_method='eom',
                 soft_clustering=False,
-                cluster_selection_epsilon=0.0,
+                cluster_selection_epsilon=0.1,
                 save_doc_embed=False,
                 path_doc_embed=None,
                 lemmatize=False,
@@ -244,7 +243,7 @@ class TopicIdentify:
                 self.embedding_model.encode(self.vocab)))
             )
 
-    def create_document_vectors(self):
+    def create_document_vectors(self, verbose=False):
         """
         TODO FIX: does not work properly
         """
@@ -254,14 +253,16 @@ class TopicIdentify:
         current = 0
         batches = int(len(self.documents) / batch_size)
         extra = len(self.documents) % batch_size
-        pbar = tqdm(total=batches+1)
+        if verbose:
+            pbar = tqdm(total=batches+1)
 
         for ind in range(0, batches):
             document_vectors.append(
                 self.embedding_model.encode(
                     self.documents[current:current + batch_size])
                 )
-            pbar.update(1)
+            if verbose:
+                pbar.update(1)
             current += batch_size
 
         if extra > 0:
@@ -269,8 +270,9 @@ class TopicIdentify:
                 self.embedding_model.encode(
                     self.document[current:current + extra])
             )
-        pbar.update(1)
-        pbar.close()
+        if verbose:
+            pbar.update(1)
+            pbar.close()
         document_vectors = self._l2_normalize(
                 np.array(np.vstack(document_vectors))
             )
