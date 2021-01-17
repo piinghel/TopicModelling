@@ -130,8 +130,6 @@ class TopicIdentify:
             if self.doc_embedding is None:
                 self.create_document_vectors()
             self.create_words_vectors()
-            self.dim_reduction()
-            self.clustering()
         elif step == 2:
             self.dim_reduction()
             self.clustering()
