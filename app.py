@@ -59,7 +59,7 @@ see [here](https://scikit-learn.org/0.19/datasets/twenty_newsgroups.html).")
 
     # add company names as stop words
     if dataset == "REIT-Industrial":
-        add_stop_word = ["alexandrias", "alexandria"]
+        add_stop_word = ["alexandrias", "alexandria", "yellow"]
         model.add_stops_words = list(df.company.unique()) + add_stop_word
     else:
         model.add_stops_words = []
@@ -101,7 +101,7 @@ data.")
 
     st.sidebar.markdown("Do not forget to hit the **update model configurations** \
 button when changing the parameter values. \
-The updating should take no longer than 3 minutes.")
+The updating should take no longer than 1 minute.")
 
     if st.sidebar.button("Update model configurations"):
         model = helper.update_model_steps(

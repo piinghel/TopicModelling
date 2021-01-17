@@ -318,26 +318,29 @@ def update_model_steps(
         selection_epsilon
         ):
 
-    update_step = 4
+    update_step = 0
+    point_step1 = 0
+    point_step2 = 0
+    point_step3 = 0
 
     if model.ngram_range != (lower_ngrams, upper_ngrams):
         model.ngram_range = (lower_ngrams, upper_ngrams)
-        update_step = min(1, update_step)
+        point_step1 = 4
 
     if model.min_df != min_df:
         model.min_df = min_df
-        update_step = min(1, update_step)
+        point_step1 = 4
 
     if model.max_df != max_df:
         model.max_df = max_df
-        update_step = min(1, update_step)
+        point_step1 = 4
 
     model_stop_word_str = ','.join(
         [str(elem) for elem in model.add_stops_words]
         )
     if model_stop_word_str != stop_words:
         model.add_stops_words = stop_words.split(",")
-        update_step = min(1, update_step)
+        point_step1 = 4
 
     # if model.lemmatize != lemmatize:
     #     model.lemmatize = lemmatize
@@ -345,35 +348,52 @@ def update_model_steps(
 
     if model.n_neighbors != n_neighbors:
         model.n_neighbors = n_neighbors
-        update_step = min(2, update_step)
+        point_step2 = 2
 
     if model.n_components != n_components:
         model.n_components = n_components
-        update_step = min(2, update_step)
+        point_step2 = 2
 
     if model.densmap != densmap:
         model.densmap = densmap
-        update_step = min(2, update_step)
+        point_step2 = 2
 
     if model.min_cluster_size != min_cluster_size:
         model.min_cluster_size = min_cluster_size
-        update_step = min(3, update_step)
+        point_step3 = 3
 
     if model.min_samples != min_samples:
         model.min_samples = min_samples
-        update_step = min(3, update_step)
+        point_step3 = 3
 
     if model.cluster_selection_epsilon != selection_epsilon:
         model.cluster_selection_epsilon = selection_epsilon
-        update_step = min(3, update_step)
+        point_step3 = 3
 
-    if update_step != 4:
+    update_step = point_step1 + point_step2 + point_step3
+    if update_step != 0:
         if update_step == 3:
             with st.spinner('Updating step 3'):
-                model.update(step=update_step)
-        else:
-            with st.spinner(f'Updating step {update_step} to 3'):
-                model.update(step=update_step)
+                model.update(step=3)
+        elif update_step == 2:
+            with st.spinner('Updating step 2 to 3'):
+                model.update(step=2)
+        elif update_step == 4:
+            with st.spinner('Updating step 1'):
+                model.update(step=1)
+        elif update_step == 5:
+            with st.spinner('Updating step 2 and 3'):
+                model.update(step=2)
+        elif update_step == 6:
+            with st.spinner('Updating step 1 to 3'):
+                model.update(step=1)
+                model.update(step=2)
+        elif update_step == 7:
+            with st.spinner('Updating step 1 and 3'):
+                model.update(step=1)
+                model.update(step=3)
+    else:
+        st.spinner("Nothing to update!")
 
     return model
 
