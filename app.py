@@ -66,7 +66,7 @@ see [here](https://scikit-learn.org/0.19/datasets/twenty_newsgroups.html).")
 
     st.sidebar.markdown("The paragraph and word embeddings were obtained using \
 [distiluse-base-multilingual-cased](https://arxiv.org/abs/1910.01108) \
-from the [sentence transfromer library](https://www.sbert.net/).")
+from the [sentence transformer library](https://www.sbert.net/).")
 
     with original_data_expander.beta_container():
         original_data_expander.markdown("Here you see the (sources) of the original \
