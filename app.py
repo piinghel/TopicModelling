@@ -59,7 +59,7 @@ see [here](https://scikit-learn.org/0.19/datasets/twenty_newsgroups.html).")
 
     # add company names as stop words
     if dataset == "REIT-Industrial":
-        add_stop_word = ["alexandrias", "alexandria", "yellow"]
+        add_stop_word = ["Alexandrias", "Alexandria", "Yellow", "Yellows"]
         model.add_stops_words = list(df.company.unique()) + add_stop_word
     else:
         model.add_stops_words = []

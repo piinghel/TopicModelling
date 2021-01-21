@@ -197,7 +197,7 @@ def params_word_embed(model):
 see [here](https://scikit-learn.org/stable/modules/generated/\
 sklearn.feature_extraction.text.CountVectorizer.html).")
     stop_words = word_embed_p.text_area(
-                "Input stopwords (separate by comma). Make sure \
+                "Input stopwords (capital letter and separate by comma). Make sure \
 there is no white space between comma's and stopwords!",
                 value=','.join([str(elem) for elem in model.add_stops_words])
             )
