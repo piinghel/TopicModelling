@@ -42,7 +42,13 @@ and perform word embeddings (Step 1)')
 see [here](https://scikit-learn.org/0.19/datasets/twenty_newsgroups.html).")
 
     # loads model
-    model = helper.load_model()
+
+    if dataset == "REIT-Industrial":
+        add_stop_words = ["Alexandrias", "Alexandria", "Yellow", "Yellows"]
+        add_stop_words = list(df.company.unique()) + add_stop_words
+        model = helper.load_model(add_stops_words=add_stop_words)
+    else:
+        model = helper.load_model()
 
     if model.dataset_name != dataset:
         with st.spinner("Change of dataset: updating step 1 to 3"):
@@ -56,13 +62,6 @@ see [here](https://scikit-learn.org/0.19/datasets/twenty_newsgroups.html).")
             model.topic_word_scores_reduced = None
             model.topic_hierarchy = None
             model.perform_steps()
-
-    # add company names as stop words
-    if dataset == "REIT-Industrial":
-        add_stop_word = ["Alexandrias", "Alexandria", "Yellow", "Yellows"]
-        model.add_stops_words = list(df.company.unique()) + add_stop_word
-    else:
-        model.add_stops_words = []
 
     st.sidebar.markdown("The paragraph and word embeddings were obtained using \
 [distiluse-base-multilingual-cased](https://arxiv.org/abs/1910.01108) \

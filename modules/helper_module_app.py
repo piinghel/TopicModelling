@@ -79,7 +79,7 @@ def construct_df_topic_words_scores(topic_words, word_scores, digits=2):
 
 
 @st.cache(allow_output_mutation=True, show_spinner=False, max_entries=1)
-def load_model():
+def load_model(add_stops_words):
     """
     load  model
     """
@@ -92,7 +92,8 @@ def load_model():
     model = topic_identify.TopicIdentify(
             documents=paragraphs,
             embedding_model=sentence_model,
-            doc_embedding=doc_embed
+            doc_embedding=doc_embed,
+            add_stops_words=add_stops_words
         )
     model.dataset_name = "REIT-Industrial"
     with st.spinner("initialization: performing \
@@ -197,7 +198,7 @@ def params_word_embed(model):
 see [here](https://scikit-learn.org/stable/modules/generated/\
 sklearn.feature_extraction.text.CountVectorizer.html).")
     stop_words = word_embed_p.text_area(
-                "Input stopwords (capital letter and separate by comma). Make sure \
+                "Input stopwords (separate by comma). Make sure \
 there is no white space between comma's and stopwords!",
                 value=','.join([str(elem) for elem in model.add_stops_words])
             )
@@ -469,11 +470,10 @@ def display_word_cloud(model, expander_topics, reduced):
 
 
 @st.cache(show_spinner=False, allow_output_mutation=True, max_entries=1)
-def embed_keywords(keywords):
+def embed_keywords(model, keywords):
     """
     embeds keywords or a paragraph
     """
-    model = load_model()
     return model._l2_normalize(
             model.embedding_model.encode(keywords)
     )
@@ -499,7 +499,7 @@ def topic_keywords(model, text, topic_reduction=False):
 small paragraphs (max 125 words).",
         value=text
     )
-    keyword_embed = embed_keywords(keywords_input)
+    keyword_embed = embed_keywords(model, keywords_input)
     keyword_embed = keyword_embed.reshape(1, len(keyword_embed))
     if topic_red_sec_kw:
         sims_vector = cosine_similarity(
@@ -649,7 +649,7 @@ small paragraphs (max 125 words).",
             max_value=10
         )
 
-    key_word_embed = embed_keywords(keywords_doc)
+    key_word_embed = embed_keywords(model, keywords_doc)
     res = np.inner(key_word_embed, model.doc_embedding)
     most_similar_idx = np.flip(np.argsort(res))
     idx = most_similar_idx[0:num_docs]
