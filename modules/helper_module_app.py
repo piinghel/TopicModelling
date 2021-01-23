@@ -217,7 +217,7 @@ there is no white space between comma's and stopwords!",
     min_df = word_embed_p.number_input(
                 "Minimum document frequency (between 0.0 and 0.20)",
                 value=model.min_df,
-                min_value=0.0,
+                min_value=0.005,
                 max_value=0.2,
                 step=0.005,
                 format="%0.3f"
