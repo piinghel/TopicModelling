@@ -226,7 +226,7 @@ there is no white space between comma's and stopwords!",
                 "Maximum document frequency (between 0.05 and 0.3)",
                 value=model.max_df,
                 min_value=0.05,
-                max_value=0.3,
+                max_value=0.305,
                 step=0.005,
                 format="%0.3f"
                 )
