@@ -5,6 +5,8 @@
 Link streamlit [sharing](https://share.streamlit.io/piinghel/topicmodelling/main/app.py).
 The link might not always work due to memory issues.
 
+Python version: 3.8.5
+
 To run the app locally:
  
  1) Download the repository (upper right corner **Code** and **Download ZIP**)
