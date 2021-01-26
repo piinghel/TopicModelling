@@ -11,6 +11,9 @@ st.set_option('deprecation.showPyplotGlobalUse', False)
 
 
 def to_excel(df):
+    """
+    download dataframe as an excel file
+    """
     output = BytesIO()
     writer = pd.ExcelWriter(output, engine='xlsxwriter')
     df.to_excel(writer, sheet_name='Sheet1')

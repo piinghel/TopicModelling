@@ -130,10 +130,10 @@ button when changing the number of topics.")
     expander_topics, reduced_topic_sec_tw,  = (
         helper.display_topics(model, topic_reduction)
     )
-    expander_topics.write("\n")
-    helper.display_word_cloud(
-        model, expander_topics, reduced_topic_sec_tw
-    )
+    # expander_topics.write("\n")
+    # helper.display_word_cloud(
+    #     model, expander_topics, reduced_topic_sec_tw
+    # )
 
     # Section 2: Keyword loadings on topics
     helper.topic_keywords(
